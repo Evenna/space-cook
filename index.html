@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>SPACE·COOK — 太空灵感熔炉</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9C%A6%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#05070e; --bg2:#080c16;
+  --cyan:#5ad1ff; --cyan-dim:#2a7a9e;
+  --amber:#ffb347; --amber-dim:#9e6a2a;
+  --violet:#b98cff;
+  --ink:#eaf2ff; --ink-dim:#8ea4c4;
+  --glass:rgba(255,255,255,.04);
+  --glass-brd:rgba(255,255,255,.09);
+  --space-glow:0 0 24px rgba(90,209,255,.25);
+  --earth-glow:0 0 24px rgba(255,179,71,.22);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--ink);
+  font-family:"Noto Sans SC","Space Grotesk",system-ui,sans-serif}
+#stars{position:fixed;inset:0;z-index:0}
+.noise{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.035;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+/* ---------- layout ---------- */
+.stage{position:relative;z-index:2;height:100%;display:flex;flex-direction:column}
+header.top{display:flex;align-items:center;justify-content:space-between;
+  padding:14px 26px;flex:0 0 auto}
+.brand{display:flex;align-items:center;gap:12px}
+.brand .logo{width:34px;height:34px;border-radius:9px;position:relative;
+  background:radial-gradient(circle at 30% 30%,var(--cyan),transparent 60%),
+             radial-gradient(circle at 70% 75%,var(--amber),transparent 60%);
+  box-shadow:0 0 18px rgba(90,209,255,.4);animation:logospin 14s linear infinite}
+@keyframes logospin{to{transform:rotate(360deg)}}
+.brand h1{font-family:"Space Grotesk";font-size:17px;letter-spacing:3px;font-weight:600}
+.brand h1 b{color:var(--cyan)}
+.brand .sub{font-size:11px;color:var(--ink-dim);letter-spacing:2px;margin-top:2px}
+.top-right{display:flex;gap:10px;align-items:center}
+.pill{font-size:11px;letter-spacing:1px;color:var(--ink-dim);border:1px solid var(--glass-brd);
+  background:var(--glass);padding:7px 13px;border-radius:20px;cursor:pointer;transition:.25s;
+  font-family:"JetBrains Mono"}
+.pill:hover{color:var(--ink);border-color:var(--cyan-dim);box-shadow:var(--space-glow)}
+
+.board{flex:1 1 auto;display:grid;grid-template-columns:1fr 1.15fr 1fr;gap:0;min-height:0;
+  padding:4px 20px 20px}
+
+/* ---------- side rails ---------- */
+.rail{display:flex;flex-direction:column;min-height:0;position:relative}
+.rail-head{display:flex;align-items:center;gap:10px;padding:6px 6px 12px}
+.rail-head .dot{width:9px;height:9px;border-radius:50%}
+.rail-head h2{font-family:"Space Grotesk";font-size:14px;letter-spacing:2px;font-weight:600}
+.rail-head .en{font-size:10px;letter-spacing:2px;color:var(--ink-dim);font-family:"JetBrains Mono"}
+.rail.space .dot{background:var(--cyan);box-shadow:0 0 10px var(--cyan)}
+.rail.earth .dot{background:var(--amber);box-shadow:0 0 10px var(--amber)}
+.search{margin:0 6px 10px;position:relative}
+.search input{width:100%;background:var(--glass);border:1px solid var(--glass-brd);border-radius:10px;
+  color:var(--ink);padding:9px 12px 9px 32px;font-size:12px;font-family:"Noto Sans SC";outline:none;transition:.2s}
+.search input:focus{border-color:var(--cyan-dim)}
+.search svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);opacity:.5}
+.rail.earth .search input:focus{border-color:var(--amber-dim)}
+.list{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;padding:4px 6px 40px;scrollbar-width:thin;
+  scrollbar-color:rgba(255,255,255,.12) transparent;-webkit-mask-image:linear-gradient(to bottom,transparent,#000 18px,#000 calc(100% - 26px),transparent)}
+.list::-webkit-scrollbar{width:6px}
+.list::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:3px}
+
+/* ---------- chips ---------- */
+.chip{position:relative;display:block;margin-bottom:9px;padding:12px 14px;border-radius:13px;
+  background:var(--glass);border:1px solid var(--glass-brd);cursor:grab;
+  transition:transform .28s cubic-bezier(.22,1,.36,1),box-shadow .28s,border-color .28s,background .28s;
+  will-change:transform;user-select:none;touch-action:none;overflow:hidden}
+.chip::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;opacity:.85}
+.rail.space .chip::before{background:linear-gradient(var(--cyan),var(--cyan-dim))}
+.rail.earth .chip::before{background:linear-gradient(var(--amber),var(--amber-dim))}
+.chip:hover{transform:translateY(-2px) scale(1.012);border-color:rgba(255,255,255,.2)}
+.rail.space .chip:hover{box-shadow:var(--space-glow)}
+.rail.earth .chip:hover{box-shadow:var(--earth-glow)}
+.chip.dragging-src{opacity:.3;filter:grayscale(.4)}
+.chip.used{opacity:.28;pointer-events:none;filter:grayscale(.6)}
+.chip .cid{font-family:"JetBrains Mono";font-size:10px;letter-spacing:1px;opacity:.6}
+.rail.space .chip .cid{color:var(--cyan)}
+.rail.earth .chip .cid{color:var(--amber)}
+.chip .cname{font-size:13.5px;font-weight:500;margin:3px 0 5px;line-height:1.35}
+.chip .ctag{display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;
+  background:rgba(255,255,255,.06);color:var(--ink-dim);letter-spacing:.5px}
+
+/* ---------- center / cauldron ---------- */
+.center{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  position:relative;padding:0 12px;min-height:0}
+.cx-title{text-align:center;margin-bottom:6px}
+.cx-title h3{font-family:"Space Grotesk";font-size:13px;letter-spacing:4px;color:var(--ink-dim);font-weight:500}
+.slots{display:flex;align-items:center;gap:18px;margin-bottom:22px}
+.slot{width:150px;min-height:92px;border-radius:16px;border:1.5px dashed rgba(255,255,255,.18);
+  background:rgba(255,255,255,.025);display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:12px;text-align:center;transition:.3s cubic-bezier(.22,1,.36,1);position:relative}
+.slot .ph{font-size:11px;color:var(--ink-dim);letter-spacing:1px;line-height:1.6}
+.slot .ph .big{display:block;font-size:22px;margin-bottom:4px;opacity:.5}
+.slot.space{box-shadow:inset 0 0 0 0 transparent}
+.slot.drop-hot{transform:scale(1.06)}
+.slot.space.drop-hot{border-color:var(--cyan);box-shadow:0 0 30px rgba(90,209,255,.35),inset 0 0 20px rgba(90,209,255,.1)}
+.slot.earth.drop-hot{border-color:var(--amber);box-shadow:0 0 30px rgba(255,179,71,.3),inset 0 0 20px rgba(255,179,71,.1)}
+.slot.filled{border-style:solid}
+.slot.space.filled{border-color:var(--cyan-dim);background:rgba(90,209,255,.07)}
+.slot.earth.filled{border-color:var(--amber-dim);background:rgba(255,179,71,.06)}
+.slot .fid{font-family:"JetBrains Mono";font-size:10px;letter-spacing:1px;margin-bottom:4px}
+.slot.space .fid{color:var(--cyan)}.slot.earth .fid{color:var(--amber)}
+.slot .fname{font-size:12.5px;font-weight:500;line-height:1.35}
+.slot .clearx{position:absolute;top:6px;right:8px;font-size:14px;color:var(--ink-dim);cursor:pointer;
+  opacity:0;transition:.2s;line-height:1}
+.slot.filled:hover .clearx{opacity:.7}
+.slot .clearx:hover{color:#fff}
+.plus{font-size:20px;color:var(--ink-dim);opacity:.6}
+
+/* cauldron */
+.cauldron-wrap{position:relative;display:flex;flex-direction:column;align-items:center}
+.cauldron{width:188px;height:150px;position:relative}
+#cauldronCanvas{position:absolute;inset:0;width:100%;height:100%}
+.cauldron .ring{position:absolute;left:50%;top:38%;width:150px;height:150px;transform:translate(-50%,-50%);
+  border-radius:50%;border:1px solid rgba(90,209,255,.18);pointer-events:none}
+.cook-btn{margin-top:14px;position:relative;border:none;cursor:pointer;
+  font-family:"Space Grotesk";font-size:16px;font-weight:700;letter-spacing:4px;color:#05070e;
+  padding:15px 46px;border-radius:40px;
+  background:linear-gradient(100deg,var(--cyan),#9ff0ff 40%,var(--amber));
+  background-size:200% 100%;box-shadow:0 8px 30px rgba(90,209,255,.35),0 0 0 1px rgba(255,255,255,.2) inset;
+  transition:transform .2s cubic-bezier(.34,1.56,.64,1),box-shadow .3s,filter .3s;
+  animation:btnflow 5s linear infinite}
+@keyframes btnflow{to{background-position:200% 0}}
+.cook-btn:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 14px 40px rgba(90,209,255,.5)}
+.cook-btn:active{transform:scale(.96)}
+.cook-btn:disabled{filter:grayscale(.7) brightness(.6);cursor:not-allowed;animation:none;box-shadow:none}
+.cook-btn .spark{position:absolute;inset:0;border-radius:40px;overflow:hidden;pointer-events:none}
+.cook-hint{font-size:11px;color:var(--ink-dim);letter-spacing:1px;margin-top:11px;height:14px;transition:.3s}
+
+/* ---------- results overlay ---------- */
+.results{position:fixed;inset:0;z-index:40;display:none;align-items:center;justify-content:center;
+  background:radial-gradient(ellipse at center,rgba(8,12,22,.82),rgba(5,7,14,.96));
+  backdrop-filter:blur(8px);opacity:0;transition:opacity .5s}
+.results.show{display:flex;opacity:1}
+.results-inner{width:min(1040px,92vw);max-height:86vh;display:flex;flex-direction:column}
+.results-head{text-align:center;margin-bottom:18px}
+.results-head .combo{font-size:12px;letter-spacing:1px;color:var(--ink-dim);margin-bottom:8px}
+.results-head .combo b{font-weight:600}
+.results-head .combo .s{color:var(--cyan)}.results-head .combo .e{color:var(--amber)}
+.results-head h2{font-family:"Space Grotesk";font-size:26px;font-weight:700;letter-spacing:1px}
+.results-head h2 em{font-style:normal;background:linear-gradient(90deg,var(--cyan),var(--amber));
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.idea-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:16px;
+  overflow-y:auto;padding:6px 6px 10px;scrollbar-width:thin}
+.idea{background:linear-gradient(160deg,rgba(255,255,255,.06),rgba(255,255,255,.02));
+  border:1px solid var(--glass-brd);border-radius:18px;padding:20px;position:relative;overflow:hidden;
+  opacity:0;transform:translateY(26px) scale(.96)}
+.idea::after{content:"";position:absolute;left:-40%;top:-40%;width:180%;height:70%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.07),transparent);transform:rotate(12deg)}
+.idea .num{font-family:"JetBrains Mono";font-size:11px;color:var(--cyan);letter-spacing:2px;opacity:.8}
+.idea h3{font-size:17px;font-weight:600;margin:8px 0 10px;line-height:1.4}
+.idea p{font-size:13px;line-height:1.75;color:var(--ink-dim)}
+.idea .tagrow{margin-top:14px;display:flex;flex-wrap:wrap;gap:6px}
+.idea .t{font-size:10px;padding:3px 9px;border-radius:14px;background:rgba(90,209,255,.1);
+  color:var(--cyan);letter-spacing:.5px}
+.idea .t.e{background:rgba(255,179,71,.1);color:var(--amber)}
+.results-foot{display:flex;justify-content:center;gap:14px;margin-top:20px}
+.rbtn{font-family:"Space Grotesk";font-size:13px;letter-spacing:2px;padding:12px 26px;border-radius:30px;
+  cursor:pointer;border:1px solid var(--glass-brd);background:var(--glass);color:var(--ink);transition:.25s}
+.rbtn:hover{border-color:var(--cyan-dim);box-shadow:var(--space-glow)}
+.rbtn.primary{background:linear-gradient(100deg,var(--cyan),var(--amber));color:#05070e;border:none;font-weight:700}
+
+/* loader */
+.loader{display:flex;flex-direction:column;align-items:center;gap:20px;padding:40px}
+.loader .orbit{width:70px;height:70px;position:relative}
+.loader .orbit i{position:absolute;inset:0;border-radius:50%;border:2px solid transparent}
+.loader .orbit i:nth-child(1){border-top-color:var(--cyan);animation:spin 1s linear infinite}
+.loader .orbit i:nth-child(2){border-right-color:var(--amber);animation:spin 1.6s linear infinite reverse;inset:8px}
+.loader .orbit i:nth-child(3){border-bottom-color:var(--violet);animation:spin 2.2s linear infinite;inset:16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loader .ltext{font-family:"JetBrains Mono";font-size:12px;color:var(--ink-dim);letter-spacing:1px;text-align:center;line-height:1.8}
+
+/* drag ghost */
+#ghost{position:fixed;z-index:60;pointer-events:none;left:0;top:0;padding:11px 15px;border-radius:13px;
+  background:rgba(12,18,30,.96);border:1px solid rgba(255,255,255,.25);box-shadow:0 20px 50px rgba(0,0,0,.6);
+  display:none;max-width:200px;will-change:transform;backdrop-filter:blur(4px)}
+#ghost .cid{font-family:"JetBrains Mono";font-size:10px;letter-spacing:1px}
+#ghost .cname{font-size:13px;font-weight:500;margin-top:3px}
+#ghost.space{box-shadow:0 20px 50px rgba(0,0,0,.6),0 0 30px rgba(90,209,255,.4)}
+#ghost.space .cid{color:var(--cyan)}
+#ghost.earth{box-shadow:0 20px 50px rgba(0,0,0,.6),0 0 30px rgba(255,179,71,.4)}
+#ghost.earth .cid{color:var(--amber)}
+
+/* modal (api key) */
+.modal{position:fixed;inset:0;z-index:70;display:none;align-items:center;justify-content:center;
+  background:rgba(5,7,14,.8);backdrop-filter:blur(6px)}
+.modal.show{display:flex}
+.modal-card{width:min(440px,92vw);background:var(--bg2);border:1px solid var(--glass-brd);border-radius:20px;padding:28px}
+.modal-card h3{font-family:"Space Grotesk";font-size:17px;margin-bottom:6px;letter-spacing:1px}
+.modal-card p{font-size:12.5px;color:var(--ink-dim);line-height:1.7;margin-bottom:16px}
+.modal-card input{width:100%;background:var(--glass);border:1px solid var(--glass-brd);border-radius:10px;
+  color:var(--ink);padding:11px 13px;font-size:13px;font-family:"JetBrains Mono";outline:none;margin-bottom:8px}
+.modal-card input:focus{border-color:var(--cyan-dim)}
+.modal-card .row{display:flex;gap:10px;margin-top:10px}
+.modal-card .note{font-size:11px;color:var(--ink-dim);opacity:.8;margin-top:12px;line-height:1.6}
+.mbtn{flex:1;text-align:center;padding:11px;border-radius:10px;cursor:pointer;font-size:13px;letter-spacing:1px;transition:.2s;border:1px solid var(--glass-brd);background:var(--glass);color:var(--ink)}
+.mbtn.primary{background:linear-gradient(100deg,var(--cyan),var(--amber));color:#05070e;border:none;font-weight:600}
+.mbtn:hover{filter:brightness(1.1)}
+
+@media (max-width:900px){
+  .board{grid-template-columns:1fr;grid-template-rows:auto auto auto;overflow-y:auto}
+  .center{order:-1;padding:16px 0 10px}
+  .list{max-height:34vh}
+  html,body{overflow:auto}
+}
+</style>
+</head>
+<body>
+<canvas id="stars"></canvas>
+<div class="noise"></div>
+
+<div class="stage">
+  <header class="top">
+    <div class="brand">
+      <div class="logo"></div>
+      <div>
+        <h1>SPACE<b>·</b>COOK</h1>
+        <div class="sub">太空灵感熔炉 · IDEA FORGE</div>
+      </div>
+    </div>
+    <div class="top-right">
+      <div class="pill" id="keyBtn">⚙ AI 设置</div>
+      <div class="pill" id="howBtn">? 玩法</div>
+    </div>
+  </header>
+
+  <div class="board">
+    <!-- LEFT: space signals -->
+    <section class="rail space">
+      <div class="rail-head">
+        <span class="dot"></span>
+        <div><h2>太空信号</h2><div class="en">SPACE SIGNALS · IE</div></div>
+      </div>
+      <div class="search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8ea4c4" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="searchS" placeholder="搜索太空技术信号…">
+      </div>
+      <div class="list" id="listS"></div>
+    </section>
+
+    <!-- CENTER: cauldron -->
+    <section class="center">
+      <div class="cx-title"><h3>把两样东西拖进熔炉</h3></div>
+      <div class="slots">
+        <div class="slot space" id="slotS" data-side="space">
+          <span class="clearx" data-clear="space">✕</span>
+          <div class="ph"><span class="big">✦</span>太空信号</div>
+        </div>
+        <div class="plus">+</div>
+        <div class="slot earth" id="slotE" data-side="earth">
+          <span class="clearx" data-clear="earth">✕</span>
+          <div class="ph"><span class="big">◆</span>地球产品</div>
+        </div>
+      </div>
+      <div class="cauldron-wrap">
+        <div class="cauldron">
+          <canvas id="cauldronCanvas"></canvas>
+          <div class="ring"></div>
+        </div>
+        <button class="cook-btn" id="cookBtn" disabled>COOKING<span class="spark"></span></button>
+        <div class="cook-hint" id="cookHint">先各选一个拖进来</div>
+      </div>
+    </section>
+
+    <!-- RIGHT: earth products -->
+    <section class="rail earth">
+      <div class="rail-head">
+        <span class="dot"></span>
+        <div><h2>地球产品</h2><div class="en">EARTH PRODUCTS · HT</div></div>
+      </div>
+      <div class="search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8ea4c4" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="searchE" placeholder="搜索地球已有产品…">
+      </div>
+      <div class="list" id="listE"></div>
+    </section>
+  </div>
+</div>
+
+<!-- drag ghost -->
+<div id="ghost"><div class="cid"></div><div class="cname"></div></div>
+
+<!-- results overlay -->
+<div class="results" id="results">
+  <div class="results-inner">
+    <div class="results-head">
+      <div class="combo" id="comboLine"></div>
+      <h2>熔炉蹦出了 <em>新物种</em></h2>
+    </div>
+    <div class="idea-grid" id="ideaGrid"></div>
+    <div class="results-foot">
+      <div class="rbtn" id="againBtn">↻ 再炒一次</div>
+      <div class="rbtn primary" id="newBtn">换组合</div>
+    </div>
+  </div>
+</div>
+
+<!-- api key modal -->
+<div class="modal" id="keyModal">
+  <div class="modal-card">
+    <h3>接入真·AI（DeepSeek）</h3>
+    <p>填入你的 DeepSeek API Key，每次 Cooking 都会让 AI 现场生成全新点子。Key 只存在你本地浏览器，不经过任何服务器。<b>留空也能玩</b>——会用内置灵感引擎兜底。</p>
+    <input id="keyInput" type="password" placeholder="sk-xxxxxxxx （可留空）" autocomplete="off">
+    <div class="row">
+      <div class="mbtn" id="keyClear">清除</div>
+      <div class="mbtn primary" id="keySave">保存</div>
+    </div>
+    <div class="note">获取 Key：platform.deepseek.com → API Keys。本页纯静态，不收集任何数据。</div>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
