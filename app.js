@@ -245,10 +245,10 @@ function refreshCook(){
   btn.disabled=!ok||state.cooking;
   stage.classList.toggle('hot',ok&&!state.cooking);
   const n=state.pot.length;
-  if(n===0)hint.textContent='把食材拖进中心熔炉';
-  else if(!hasSignal())hint.textContent='还差一个 ✦ 太空信号';
-  else if(!hasEarth())hint.textContent='还差一个 ◆ 地球同款';
-  else hint.innerHTML=`锅里 <b style="color:var(--blue)">${n}</b> 味 · 可以点火了`;
+  if(n===0)hint.innerHTML='把食材拖进锅里 · 已选 <b>0</b> 条线索';
+  else if(!hasSignal())hint.innerHTML=`已选 <b>${n}</b> 条线索 · 还差一个 ✦ 太空信号`;
+  else if(!hasEarth())hint.innerHTML=`已选 <b>${n}</b> 条线索 · 还差一个 ◆ 地球同款`;
+  else hint.innerHTML=`已选 <b>${n}</b> 条线索 · 可以开火了`;
 }
 
 /* ---------- ring dots (SATTO decorative ring) ---------- */

@@ -175,17 +175,41 @@ body{
 .stage{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:8;
   width:min(46vmin,340px);height:min(46vmin,340px);border-radius:50%;
   display:flex;align-items:center;justify-content:center;pointer-events:none}
-/* dotted catcher ring (SATTO dots) */
-.ring-dots{position:absolute;inset:-14px;border-radius:50%;z-index:8}
+/* dotted catcher ring (SATTO dots) — hidden when pan skin is on */
+.ring-dots{position:absolute;inset:-14px;border-radius:50%;z-index:8;opacity:0}
 .ring-dots i{position:absolute;width:7px;height:7px;border-radius:50%;background:var(--dotcolor);
   top:50%;left:50%;margin:-3.5px;transition:.4s}
 .stage.hot .ring-dots i{background:var(--blue-soft)}
-.catcher{position:absolute;inset:0;border-radius:50%;border:2px dashed var(--line);
-  transition:.35s cubic-bezier(.34,1.56,.64,1);background:radial-gradient(circle at 50% 44%,rgba(255,255,255,.65),rgba(255,255,255,.18) 70%,transparent);
-  display:flex;align-items:center;justify-content:center;}
-.catcher.over{border-color:var(--blue);border-style:solid;transform:scale(1.05);box-shadow:0 0 0 10px var(--blue-soft),var(--shadow-lg);background:radial-gradient(circle at 50% 44%,var(--blue-soft),rgba(255,255,255,.3) 72%,transparent)}
-.stage.hot .catcher{border-color:var(--blue);border-style:solid;
-  box-shadow:0 0 60px 10px rgba(46,75,255,.4);animation:breathe .9s ease-in-out infinite}
+/* ===== realistic frying pan ===== */
+.pan-handle{position:absolute;z-index:7;width:30px;height:min(30vmin,220px);border-radius:16px;
+  left:12%;bottom:-16%;transform:rotate(38deg);transform-origin:top center;
+  background:linear-gradient(90deg,#1a39d6,var(--blue) 42%,#5b78ff 60%,#243fd1);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.18), 0 10px 26px rgba(30,40,110,.3);}
+.pan-handle::after{content:"";position:absolute;left:50%;top:46%;width:13px;height:34px;margin-left:-6.5px;
+  border-radius:999px;background:rgba(0,0,0,.18);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.14)}
+.catcher.pan{position:absolute;inset:0;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  transition:.35s cubic-bezier(.34,1.56,.64,1);
+  /* metal rim then cream ceramic interior */
+  background:
+    radial-gradient(circle at 50% 50%, #faf7f0 0 60%, rgba(0,0,0,.06) 60.5% 61.5%, transparent 62%),
+    radial-gradient(circle at 50% 42%, #fbf9f3, #efeadf 58%, #e4ddcf 72%),
+    conic-gradient(from 210deg, #cfc8ba, #efe9dd 20%, #c7c0b1 42%, #e8e2d6 64%, #d2cbbc 82%, #cfc8ba);
+  box-shadow:
+    0 34px 70px rgba(40,40,30,.28),
+    inset 0 0 0 7px rgba(255,255,255,.5),
+    inset 0 4px 14px rgba(255,255,255,.7),
+    inset 0 -18px 40px rgba(120,110,90,.22);}
+.pan-sheen{position:absolute;inset:7%;border-radius:50%;pointer-events:none;z-index:9;
+  background:radial-gradient(130px 80px at 36% 30%, rgba(255,255,255,.55), transparent 70%);}
+.catcher.pan.over{transform:scale(1.04);box-shadow:0 40px 80px rgba(40,40,30,.32),inset 0 0 0 7px var(--blue-soft),0 0 0 6px var(--blue-soft),inset 0 -18px 40px rgba(120,110,90,.22)}
+.stage.hot .catcher.pan{box-shadow:0 40px 80px rgba(40,40,30,.3),inset 0 0 0 7px rgba(255,255,255,.5),0 0 54px 6px rgba(46,75,255,.28),inset 0 -18px 40px rgba(120,110,90,.22);animation:breathe .9s ease-in-out infinite}
+body[data-theme="cosmos"] .catcher.pan{background:
+    radial-gradient(circle at 50% 42%, #1b2648, #121a38 62%, #0d1430 74%),
+    conic-gradient(from 210deg,#2a3560,#3b4a86 22%,#263055 44%,#3a4a84 66%,#2a3560);
+  box-shadow:0 34px 70px rgba(0,0,0,.55),inset 0 0 0 7px rgba(91,124,255,.25),inset 0 -18px 40px rgba(0,0,0,.4),0 0 60px rgba(91,124,255,.2)}
+body[data-theme="cosmos"] .pan-handle{background:linear-gradient(90deg,#3350e6,#5b7cff 50%,#8aa0ff)}
+body[data-theme="press"] .catcher.pan{background:#fff;border:3px solid #1a1a1a;box-shadow:8px 8px 0 #1a1a1a,inset 0 0 0 6px #fff}
+body[data-theme="press"] .pan-handle{background:#ff3b1f;border:2.5px solid #1a1a1a;box-shadow:4px 4px 0 #1a1a1a}
 @keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
 
 .emptyhint{position:absolute;text-align:center;color:var(--mute);pointer-events:none;transition:.3s}
@@ -212,16 +236,18 @@ body{
 
 .cookdock{position:absolute;top:calc(50% + min(26vmin,195px));left:50%;transform:translateX(-50%);z-index:20;
   display:flex;flex-direction:column;align-items:center;gap:9px;pointer-events:auto}
-.cookbtn{display:inline-flex;align-items:center;gap:10px;padding:15px 44px;border:none;border-radius:999px;cursor:pointer;
-  background:var(--blue);color:#fff;font-size:18px;font-weight:700;font-family:"Space Grotesk";letter-spacing:.5px;
-  box-shadow:0 12px 34px rgba(46,75,255,.4);transition:.25s;position:relative;overflow:hidden}
-.cookbtn .spark{font-size:17px}
-.cookbtn:hover:not(:disabled){transform:translateY(-2px) scale(1.04);box-shadow:0 18px 44px rgba(46,75,255,.55)}
-.cookbtn:disabled{background:#c3c0b7;box-shadow:none;cursor:not-allowed}
-.cookbtn.cooking{pointer-events:none}
-.cookbtn.cooking .spark{animation:spin .8s linear infinite}
+.cookbtn{display:inline-flex;align-items:baseline;gap:8px;padding:4px 6px;border:none;background:none;cursor:pointer;
+  color:var(--ink);font-size:clamp(34px,5vw,54px);font-weight:500;letter-spacing:-1px;
+  font-family:Georgia,"Times New Roman","Noto Serif SC",serif;transition:.25s;position:relative;line-height:1}
+.cookbtn .arr{font-size:.72em;font-weight:400;transition:transform .25s;display:inline-block}
+.cookbtn:hover:not(:disabled) .arr{transform:translate(4px,-4px)}
+.cookbtn:hover:not(:disabled){color:var(--blue)}
+.cookbtn:disabled{color:var(--mute);opacity:.55;cursor:not-allowed}
+.cookbtn.cooking{pointer-events:none;color:var(--blue)}
+.cookbtn.cooking .arr{animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.cookhint{font-size:11.5px;color:var(--mute);font-weight:500;text-align:center;max-width:320px;line-height:1.5}
+.cookhint{font-size:13px;color:var(--mute);font-weight:500;text-align:center;max-width:320px;line-height:1.5;margin-top:2px}
+.cookhint b{color:var(--blue);font-weight:800;font-size:15px;font-family:"Space Grotesk";margin:0 2px}
 .dice{display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none;font-size:11.5px;font-weight:700;
   color:var(--blue);padding:6px 14px;border-radius:999px;border:1.5px dashed var(--blue);background:var(--blue-soft);transition:.2s}
 .dice:hover{transform:scale(1.04)}
@@ -342,12 +368,14 @@ body{
   <div id="canvas"></div>
   <svg id="wires"></svg>
 
-  <!-- center stage -->
+  <!-- center stage: the frying pan -->
   <div class="stage" id="stage">
+    <div class="pan-handle"></div>
     <div class="ring-dots" id="ringDots"></div>
-    <div class="catcher" id="catcher">
+    <div class="catcher pan" id="catcher">
+      <div class="pan-sheen"></div>
       <div class="emptyhint" id="emptyHint">
-        <div class="big">把食材拖进来</div>
+        <div class="big">把食材拖进锅里</div>
         <div class="sm">至少 1 个太空信号 + 1 个地球同款<br>场景/挑战让脑暴更精准</div>
       </div>
       <div class="cluster" id="cluster"></div>
@@ -355,8 +383,8 @@ body{
   </div>
 
   <div class="cookdock">
-    <button class="cookbtn" id="cookBtn" disabled><span class="spark">✦</span>Cooking</button>
-    <div class="cookhint" id="cookHint">把食材拖进中心熔炉</div>
+    <button class="cookbtn" id="cookBtn" disabled>Cooking<span class="arr">↗</span></button>
+    <div class="cookhint" id="cookHint">已选 <b id="potCount">0</b> 条线索</div>
     <span class="dice" id="diceBtn"><span class="d">🎲</span>手气模式</span>
   </div>
 
