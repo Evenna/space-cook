@@ -1,322 +1,327 @@
-<!DOCTYPE html>
-<html lang="zh">
+<!doctype html>
+<html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>SPACE·COOK — 太空灵感熔炉</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9C%A6%3C/text%3E%3C/svg%3E">
+<title>灵感碰撞 · 太空 × 地球</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%232E4BFF'/%3E%3Ctext x='50' y='70' font-size='56' text-anchor='middle' fill='white'%3E%E2%9C%A6%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#05070e; --bg2:#080c16;
-  --cyan:#5ad1ff; --cyan-dim:#2a7a9e;
-  --amber:#ffb347; --amber-dim:#9e6a2a;
-  --violet:#b98cff;
-  --ink:#eaf2ff; --ink-dim:#8ea4c4;
-  --glass:rgba(255,255,255,.04);
-  --glass-brd:rgba(255,255,255,.09);
-  --space-glow:0 0 24px rgba(90,209,255,.25);
-  --earth-glow:0 0 24px rgba(255,179,71,.22);
+  --bg:#f3f1ea;           /* warm gallery paper */
+  --bg2:#eceae2;
+  --ink:#141414;          /* near-black */
+  --ink2:#3a3a38;
+  --mute:#8d8a80;
+  --line:#dcd9ce;
+  --blue:#2E4BFF;         /* electric blue accent */
+  --blue-soft:#eaedff;
+  --card:#ffffff;
+  --note-blue:#dce7fb;
+  --note-yellow:#fbf1cf;
+  --note-white:#ffffff;
+  --shadow:0 8px 30px rgba(30,30,40,.08);
+  --shadow-lg:0 20px 60px rgba(30,40,80,.14);
+  --r:18px;
 }
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--ink);
-  font-family:"Noto Sans SC","Space Grotesk",system-ui,sans-serif}
-#stars{position:fixed;inset:0;z-index:0}
-.noise{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.035;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:"Noto Sans SC",system-ui,sans-serif;
+  background:var(--bg);
+  color:var(--ink);
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+body::before{ /* subtle paper grain */
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.5;
+  background:
+    radial-gradient(1200px 600px at 10% -10%, #fbfaf5, transparent 60%),
+    radial-gradient(1000px 600px at 110% 10%, #f6f4ec, transparent 55%);
+}
+a{color:inherit}
 
-/* ---------- layout ---------- */
-.stage{position:relative;z-index:2;height:100%;display:flex;flex-direction:column}
-header.top{display:flex;align-items:center;justify-content:space-between;
-  padding:14px 26px;flex:0 0 auto}
-.brand{display:flex;align-items:center;gap:12px}
-.brand .logo{width:34px;height:34px;border-radius:9px;position:relative;
-  background:radial-gradient(circle at 30% 30%,var(--cyan),transparent 60%),
-             radial-gradient(circle at 70% 75%,var(--amber),transparent 60%);
-  box-shadow:0 0 18px rgba(90,209,255,.4);animation:logospin 14s linear infinite}
-@keyframes logospin{to{transform:rotate(360deg)}}
-.brand h1{font-family:"Space Grotesk";font-size:17px;letter-spacing:3px;font-weight:600}
-.brand h1 b{color:var(--cyan)}
-.brand .sub{font-size:11px;color:var(--ink-dim);letter-spacing:2px;margin-top:2px}
-.top-right{display:flex;gap:10px;align-items:center}
-.pill{font-size:11px;letter-spacing:1px;color:var(--ink-dim);border:1px solid var(--glass-brd);
-  background:var(--glass);padding:7px 13px;border-radius:20px;cursor:pointer;transition:.25s;
-  font-family:"JetBrains Mono"}
-.pill:hover{color:var(--ink);border-color:var(--cyan-dim);box-shadow:var(--space-glow)}
+/* ---------- top bar ---------- */
+.topbar{
+  position:sticky;top:0;z-index:40;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:20px 40px;
+  background:linear-gradient(var(--bg),rgba(243,241,234,.75));
+  backdrop-filter:blur(8px);
+}
+.brand{font-weight:900;font-size:22px;letter-spacing:1px;display:flex;align-items:center;gap:10px}
+.brand .dot{width:11px;height:11px;border-radius:50%;background:var(--blue);box-shadow:0 0 0 4px var(--blue-soft)}
+.topmid{font-weight:700;font-size:15px;color:var(--ink2);letter-spacing:4px}
+.topright{display:flex;gap:10px;align-items:center}
+.tbtn{
+  font-size:13px;font-weight:700;color:var(--ink2);cursor:pointer;
+  padding:8px 14px;border-radius:999px;border:1.5px solid var(--line);
+  background:#fff;transition:.2s;user-select:none;
+}
+.tbtn:hover{border-color:var(--blue);color:var(--blue);transform:translateY(-1px)}
+.tbtn.ai::after{content:"↗";margin-left:5px;font-weight:700}
 
-.board{flex:1 1 auto;display:grid;grid-template-columns:1fr 1.15fr 1fr;gap:0;min-height:0;
-  padding:4px 20px 20px}
+/* ---------- stage ---------- */
+.stage{position:relative;z-index:1;max-width:1560px;margin:0 auto;padding:8px 40px 80px;
+  display:grid;grid-template-columns:1fr 360px 1fr;gap:26px;align-items:start;}
+@media(max-width:1180px){.stage{grid-template-columns:1fr;gap:40px}}
 
-/* ---------- side rails ---------- */
-.rail{display:flex;flex-direction:column;min-height:0;position:relative}
-.rail-head{display:flex;align-items:center;gap:10px;padding:6px 6px 12px}
-.rail-head .dot{width:9px;height:9px;border-radius:50%}
-.rail-head h2{font-family:"Space Grotesk";font-size:14px;letter-spacing:2px;font-weight:600}
-.rail-head .en{font-size:10px;letter-spacing:2px;color:var(--ink-dim);font-family:"JetBrains Mono"}
-.rail.space .dot{background:var(--cyan);box-shadow:0 0 10px var(--cyan)}
-.rail.earth .dot{background:var(--amber);box-shadow:0 0 10px var(--amber)}
-.search{margin:0 6px 10px;position:relative}
-.search input{width:100%;background:var(--glass);border:1px solid var(--glass-brd);border-radius:10px;
-  color:var(--ink);padding:9px 12px 9px 32px;font-size:12px;font-family:"Noto Sans SC";outline:none;transition:.2s}
-.search input:focus{border-color:var(--cyan-dim)}
-.search svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);opacity:.5}
-.rail.earth .search input:focus{border-color:var(--amber-dim)}
-.list{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;padding:4px 6px 40px;scrollbar-width:thin;
-  scrollbar-color:rgba(255,255,255,.12) transparent;-webkit-mask-image:linear-gradient(to bottom,transparent,#000 18px,#000 calc(100% - 26px),transparent)}
-.list::-webkit-scrollbar{width:6px}
-.list::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:3px}
+.colhead{font-size:clamp(34px,4.4vw,62px);font-weight:900;line-height:1;letter-spacing:-1px;margin:8px 0 6px}
+.colhead.earth{text-align:right}
+.colsub{font-family:"Space Grotesk";font-size:12px;letter-spacing:3px;color:var(--mute);font-weight:600;text-transform:uppercase}
+.colsub.earth{text-align:right}
 
-/* ---------- chips ---------- */
-.chip{position:relative;display:block;margin-bottom:9px;padding:12px 14px;border-radius:13px;
-  background:var(--glass);border:1px solid var(--glass-brd);cursor:grab;
-  transition:transform .28s cubic-bezier(.22,1,.36,1),box-shadow .28s,border-color .28s,background .28s;
-  will-change:transform;user-select:none;touch-action:none;overflow:hidden}
-.chip::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;opacity:.85}
-.rail.space .chip::before{background:linear-gradient(var(--cyan),var(--cyan-dim))}
-.rail.earth .chip::before{background:linear-gradient(var(--amber),var(--amber-dim))}
-.chip:hover{transform:translateY(-2px) scale(1.012);border-color:rgba(255,255,255,.2)}
-.rail.space .chip:hover{box-shadow:var(--space-glow)}
-.rail.earth .chip:hover{box-shadow:var(--earth-glow)}
-.chip.dragging-src{opacity:.3;filter:grayscale(.4)}
-.chip.used{opacity:.28;pointer-events:none;filter:grayscale(.6)}
-.chip .cid{font-family:"JetBrains Mono";font-size:10px;letter-spacing:1px;opacity:.6}
-.rail.space .chip .cid{color:var(--cyan)}
-.rail.earth .chip .cid{color:var(--amber)}
-.chip .cname{font-size:13.5px;font-weight:500;margin:3px 0 5px;line-height:1.35}
-.chip .ctag{display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;
-  background:rgba(255,255,255,.06);color:var(--ink-dim);letter-spacing:.5px}
+/* search */
+.search{margin:16px 0 20px;position:relative}
+.search input{
+  width:100%;padding:12px 16px 12px 38px;border-radius:14px;border:1.5px solid var(--line);
+  background:#fff;font-size:14px;font-family:inherit;color:var(--ink);transition:.2s;
+}
+.search input:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 4px var(--blue-soft)}
+.search svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);width:16px;height:16px;opacity:.4}
+.earth .search input{padding:12px 38px 12px 16px}
+.earth .search svg{left:auto;right:13px}
 
-/* ---------- center / cauldron ---------- */
-.center{display:flex;flex-direction:column;align-items:center;justify-content:center;
-  position:relative;padding:0 12px;min-height:0}
-.cx-title{text-align:center;margin-bottom:6px}
-.cx-title h3{font-family:"Space Grotesk";font-size:13px;letter-spacing:4px;color:var(--ink-dim);font-weight:500}
-.slots{display:flex;align-items:center;gap:18px;margin-bottom:22px}
-.slot{width:150px;min-height:92px;border-radius:16px;border:1.5px dashed rgba(255,255,255,.18);
-  background:rgba(255,255,255,.025);display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:12px;text-align:center;transition:.3s cubic-bezier(.22,1,.36,1);position:relative}
-.slot .ph{font-size:11px;color:var(--ink-dim);letter-spacing:1px;line-height:1.6}
-.slot .ph .big{display:block;font-size:22px;margin-bottom:4px;opacity:.5}
-.slot.space{box-shadow:inset 0 0 0 0 transparent}
-.slot.drop-hot{transform:scale(1.06)}
-.slot.space.drop-hot{border-color:var(--cyan);box-shadow:0 0 30px rgba(90,209,255,.35),inset 0 0 20px rgba(90,209,255,.1)}
-.slot.earth.drop-hot{border-color:var(--amber);box-shadow:0 0 30px rgba(255,179,71,.3),inset 0 0 20px rgba(255,179,71,.1)}
-.slot.filled{border-style:solid}
-.slot.space.filled{border-color:var(--cyan-dim);background:rgba(90,209,255,.07)}
-.slot.earth.filled{border-color:var(--amber-dim);background:rgba(255,179,71,.06)}
-.slot .fid{font-family:"JetBrains Mono";font-size:10px;letter-spacing:1px;margin-bottom:4px}
-.slot.space .fid{color:var(--cyan)}.slot.earth .fid{color:var(--amber)}
-.slot .fname{font-size:12.5px;font-weight:500;line-height:1.35}
-.slot .clearx{position:absolute;top:6px;right:8px;font-size:14px;color:var(--ink-dim);cursor:pointer;
-  opacity:0;transition:.2s;line-height:1}
-.slot.filled:hover .clearx{opacity:.7}
-.slot .clearx:hover{color:#fff}
-.plus{font-size:20px;color:var(--ink-dim);opacity:.6}
+/* ---------- photo collage grid ---------- */
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:560px){.grid{grid-template-columns:repeat(2,1fr)}}
 
-/* cauldron */
-.cauldron-wrap{position:relative;display:flex;flex-direction:column;align-items:center}
-.cauldron{width:188px;height:150px;position:relative}
-#cauldronCanvas{position:absolute;inset:0;width:100%;height:100%}
-.cauldron .ring{position:absolute;left:50%;top:38%;width:150px;height:150px;transform:translate(-50%,-50%);
-  border-radius:50%;border:1px solid rgba(90,209,255,.18);pointer-events:none}
-.cook-btn{margin-top:14px;position:relative;border:none;cursor:pointer;
-  font-family:"Space Grotesk";font-size:16px;font-weight:700;letter-spacing:4px;color:#05070e;
-  padding:15px 46px;border-radius:40px;
-  background:linear-gradient(100deg,var(--cyan),#9ff0ff 40%,var(--amber));
-  background-size:200% 100%;box-shadow:0 8px 30px rgba(90,209,255,.35),0 0 0 1px rgba(255,255,255,.2) inset;
-  transition:transform .2s cubic-bezier(.34,1.56,.64,1),box-shadow .3s,filter .3s;
-  animation:btnflow 5s linear infinite}
-@keyframes btnflow{to{background-position:200% 0}}
-.cook-btn:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 14px 40px rgba(90,209,255,.5)}
-.cook-btn:active{transform:scale(.96)}
-.cook-btn:disabled{filter:grayscale(.7) brightness(.6);cursor:not-allowed;animation:none;box-shadow:none}
-.cook-btn .spark{position:absolute;inset:0;border-radius:40px;overflow:hidden;pointer-events:none}
-.cook-hint{font-size:11px;color:var(--ink-dim);letter-spacing:1px;margin-top:11px;height:14px;transition:.3s}
+.card{
+  position:relative;border-radius:var(--r);overflow:hidden;cursor:grab;
+  background:#e9e7df;aspect-ratio:1/1;box-shadow:var(--shadow);
+  transition:transform .32s cubic-bezier(.22,1,.36,1), box-shadow .32s, opacity .25s, filter .25s;
+  will-change:transform;touch-action:none;user-select:none;-webkit-user-drag:none;
+}
+.space .card:nth-child(4n){border-radius:50%} /* some round like the ref */
+.space .card:nth-child(7n+2){border-radius:50%}
+.card img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;
+  transition:transform .5s ease;filter:saturate(.96)}
+.card:hover{transform:translateY(-5px) scale(1.015);box-shadow:var(--shadow-lg);z-index:3}
+.card:hover img{transform:scale(1.08)}
+.card:active{cursor:grabbing}
+.card .meta{
+  position:absolute;left:0;right:0;bottom:0;padding:22px 12px 10px;
+  background:linear-gradient(transparent,rgba(12,12,16,.82));
+  color:#fff;transform:translateY(4px);opacity:0;transition:.28s;
+}
+.card:hover .meta{transform:translateY(0);opacity:1}
+.card .cid{font-family:"Space Grotesk";font-size:9px;letter-spacing:1.5px;opacity:.8}
+.card .cname{font-size:12.5px;font-weight:700;line-height:1.3;margin-top:2px}
+.card.picked{outline:3px solid var(--blue);outline-offset:-3px;box-shadow:0 0 0 6px var(--blue-soft),var(--shadow-lg);opacity:.55;filter:grayscale(.2)}
+.card.picked::after{content:"✓ 已入炉";position:absolute;top:8px;left:8px;background:var(--blue);color:#fff;
+  font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px;letter-spacing:.5px}
 
-/* ---------- results overlay ---------- */
-.results{position:fixed;inset:0;z-index:40;display:none;align-items:center;justify-content:center;
-  background:radial-gradient(ellipse at center,rgba(8,12,22,.82),rgba(5,7,14,.96));
-  backdrop-filter:blur(8px);opacity:0;transition:opacity .5s}
-.results.show{display:flex;opacity:1}
-.results-inner{width:min(1040px,92vw);max-height:86vh;display:flex;flex-direction:column}
-.results-head{text-align:center;margin-bottom:18px}
-.results-head .combo{font-size:12px;letter-spacing:1px;color:var(--ink-dim);margin-bottom:8px}
-.results-head .combo b{font-weight:600}
-.results-head .combo .s{color:var(--cyan)}.results-head .combo .e{color:var(--amber)}
-.results-head h2{font-family:"Space Grotesk";font-size:26px;font-weight:700;letter-spacing:1px}
-.results-head h2 em{font-style:normal;background:linear-gradient(90deg,var(--cyan),var(--amber));
-  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
-.idea-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:16px;
-  overflow-y:auto;padding:6px 6px 10px;scrollbar-width:thin}
-.idea{background:linear-gradient(160deg,rgba(255,255,255,.06),rgba(255,255,255,.02));
-  border:1px solid var(--glass-brd);border-radius:18px;padding:20px;position:relative;overflow:hidden;
-  opacity:0;transform:translateY(26px) scale(.96)}
-.idea::after{content:"";position:absolute;left:-40%;top:-40%;width:180%;height:70%;
-  background:linear-gradient(90deg,transparent,rgba(255,255,255,.07),transparent);transform:rotate(12deg)}
-.idea .num{font-family:"JetBrains Mono";font-size:11px;color:var(--cyan);letter-spacing:2px;opacity:.8}
-.idea h3{font-size:17px;font-weight:600;margin:8px 0 10px;line-height:1.4}
-.idea p{font-size:13px;line-height:1.75;color:var(--ink-dim)}
-.idea .tagrow{margin-top:14px;display:flex;flex-wrap:wrap;gap:6px}
-.idea .t{font-size:10px;padding:3px 9px;border-radius:14px;background:rgba(90,209,255,.1);
-  color:var(--cyan);letter-spacing:.5px}
-.idea .t.e{background:rgba(255,179,71,.1);color:var(--amber)}
-.results-foot{display:flex;justify-content:center;gap:14px;margin-top:20px}
-.rbtn{font-family:"Space Grotesk";font-size:13px;letter-spacing:2px;padding:12px 26px;border-radius:30px;
-  cursor:pointer;border:1px solid var(--glass-brd);background:var(--glass);color:var(--ink);transition:.25s}
-.rbtn:hover{border-color:var(--cyan-dim);box-shadow:var(--space-glow)}
-.rbtn.primary{background:linear-gradient(100deg,var(--cyan),var(--amber));color:#05070e;border:none;font-weight:700}
+/* ---------- center forge ---------- */
+.center{position:sticky;top:90px;display:flex;flex-direction:column;align-items:center;gap:16px;padding-top:70px}
+@media(max-width:1180px){.center{position:static;padding-top:0}}
+.slots{display:flex;align-items:center;gap:14px}
+.slot{
+  width:116px;height:116px;border-radius:22px;border:2.5px dashed var(--line);
+  background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;color:var(--mute);font-size:12px;font-weight:700;position:relative;
+  transition:.28s cubic-bezier(.34,1.56,.64,1);overflow:hidden;
+}
+.slot .sym{font-size:24px;margin-bottom:4px;color:var(--blue)}
+.slot.over{border-color:var(--blue);background:var(--blue-soft);transform:scale(1.06)}
+.slot.filled{border-style:solid;border-color:var(--blue);color:#fff;box-shadow:var(--shadow-lg)}
+.slot.filled img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.slot .fillcap{position:absolute;left:0;right:0;bottom:0;padding:16px 8px 7px;z-index:2;
+  background:linear-gradient(transparent,rgba(10,14,40,.9));text-align:left}
+.slot .fillcap .fid{font-family:"Space Grotesk";font-size:8px;letter-spacing:1px;opacity:.85}
+.slot .fillcap .fname{font-size:11px;font-weight:700;line-height:1.25;margin-top:1px}
+.slot .clearx{position:absolute;top:6px;right:6px;z-index:3;width:20px;height:20px;border-radius:50%;
+  background:rgba(255,255,255,.92);color:#333;display:none;align-items:center;justify-content:center;
+  font-size:12px;cursor:pointer;line-height:1}
+.slot.filled .clearx{display:flex}
+.xmark{font-size:22px;font-weight:700;color:var(--ink);opacity:.5}
 
-/* loader */
-.loader{display:flex;flex-direction:column;align-items:center;gap:20px;padding:40px}
-.loader .orbit{width:70px;height:70px;position:relative}
-.loader .orbit i{position:absolute;inset:0;border-radius:50%;border:2px solid transparent}
-.loader .orbit i:nth-child(1){border-top-color:var(--cyan);animation:spin 1s linear infinite}
-.loader .orbit i:nth-child(2){border-right-color:var(--amber);animation:spin 1.6s linear infinite reverse;inset:8px}
-.loader .orbit i:nth-child(3){border-bottom-color:var(--violet);animation:spin 2.2s linear infinite;inset:16px}
+.cookbtn{
+  margin-top:4px;display:inline-flex;align-items:center;gap:10px;
+  padding:16px 40px;border:none;border-radius:999px;cursor:pointer;
+  background:var(--blue);color:#fff;font-size:19px;font-weight:700;font-family:"Space Grotesk";letter-spacing:.5px;
+  box-shadow:0 10px 30px rgba(46,75,255,.35);transition:.25s;position:relative;overflow:hidden;
+}
+.cookbtn .spark{font-size:18px}
+.cookbtn:hover:not(:disabled){transform:translateY(-2px) scale(1.03);box-shadow:0 16px 40px rgba(46,75,255,.5)}
+.cookbtn:active:not(:disabled){transform:translateY(0) scale(.99)}
+.cookbtn:disabled{background:#c9c6bd;color:#fff;box-shadow:none;cursor:not-allowed}
+.cookbtn.cooking{pointer-events:none}
+.cookbtn.cooking .spark{animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.loader .ltext{font-family:"JetBrains Mono";font-size:12px;color:var(--ink-dim);letter-spacing:1px;text-align:center;line-height:1.8}
+.cookhint{font-size:12.5px;color:var(--mute);font-weight:500;margin-top:-4px;text-align:center}
 
-/* drag ghost */
-#ghost{position:fixed;z-index:60;pointer-events:none;left:0;top:0;padding:11px 15px;border-radius:13px;
-  background:rgba(12,18,30,.96);border:1px solid rgba(255,255,255,.25);box-shadow:0 20px 50px rgba(0,0,0,.6);
-  display:none;max-width:200px;will-change:transform;backdrop-filter:blur(4px)}
-#ghost .cid{font-family:"JetBrains Mono";font-size:10px;letter-spacing:1px}
-#ghost .cname{font-size:13px;font-weight:500;margin-top:3px}
-#ghost.space{box-shadow:0 20px 50px rgba(0,0,0,.6),0 0 30px rgba(90,209,255,.4)}
-#ghost.space .cid{color:var(--cyan)}
-#ghost.earth{box-shadow:0 20px 50px rgba(0,0,0,.6),0 0 30px rgba(255,179,71,.4)}
-#ghost.earth .cid{color:var(--amber)}
+/* connectors svg overlay */
+#wires{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:5}
+#wires path{fill:none;stroke:var(--blue);stroke-width:2.5;stroke-linecap:round;
+  filter:drop-shadow(0 2px 6px rgba(46,75,255,.3))}
+#wires circle{fill:var(--blue)}
 
-/* modal (api key) */
-.modal{position:fixed;inset:0;z-index:70;display:none;align-items:center;justify-content:center;
-  background:rgba(5,7,14,.8);backdrop-filter:blur(6px)}
-.modal.show{display:flex}
-.modal-card{width:min(440px,92vw);background:var(--bg2);border:1px solid var(--glass-brd);border-radius:20px;padding:28px}
-.modal-card h3{font-family:"Space Grotesk";font-size:17px;margin-bottom:6px;letter-spacing:1px}
-.modal-card p{font-size:12.5px;color:var(--ink-dim);line-height:1.7;margin-bottom:16px}
-.modal-card input{width:100%;background:var(--glass);border:1px solid var(--glass-brd);border-radius:10px;
-  color:var(--ink);padding:11px 13px;font-size:13px;font-family:"JetBrains Mono";outline:none;margin-bottom:8px}
-.modal-card input:focus{border-color:var(--cyan-dim)}
-.modal-card .row{display:flex;gap:10px;margin-top:10px}
-.modal-card .note{font-size:11px;color:var(--ink-dim);opacity:.8;margin-top:12px;line-height:1.6}
-.mbtn{flex:1;text-align:center;padding:11px;border-radius:10px;cursor:pointer;font-size:13px;letter-spacing:1px;transition:.2s;border:1px solid var(--glass-brd);background:var(--glass);color:var(--ink)}
-.mbtn.primary{background:linear-gradient(100deg,var(--cyan),var(--amber));color:#05070e;border:none;font-weight:600}
-.mbtn:hover{filter:brightness(1.1)}
-
-@media (max-width:900px){
-  .board{grid-template-columns:1fr;grid-template-rows:auto auto auto;overflow-y:auto}
-  .center{order:-1;padding:16px 0 10px}
-  .list{max-height:34vh}
-  html,body{overflow:auto}
+/* ---------- results : sticky notes ---------- */
+.results-wrap{grid-column:1/-1;margin-top:48px;position:relative}
+.results-head{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.results-head .bar{width:5px;height:26px;background:var(--blue);border-radius:3px}
+.results-head h2{font-size:26px;font-weight:900}
+.combo{font-size:13px;color:var(--mute);margin:2px 0 26px;font-weight:500}
+.combo b{color:var(--ink)}
+.notes{display:flex;flex-wrap:wrap;gap:22px;align-items:flex-start}
+.note{
+  width:270px;padding:26px 24px 28px;border-radius:6px;position:relative;
+  box-shadow:var(--shadow-lg);opacity:0;
+  background:var(--note-white);
 }
+.note:nth-child(3n+1){background:var(--note-blue);transform:rotate(-1.5deg)}
+.note:nth-child(3n+2){background:var(--note-white);transform:rotate(.8deg);width:300px}
+.note:nth-child(3n+3){background:var(--note-yellow);transform:rotate(1.6deg)}
+.note::before{content:"";position:absolute;left:0;top:18px;bottom:18px;width:5px;border-radius:3px;background:var(--blue)}
+.note .num{font-family:"Space Grotesk";font-size:10px;letter-spacing:2px;color:var(--blue);font-weight:700;margin-bottom:10px}
+.note h3{font-size:clamp(22px,2.4vw,30px);font-weight:900;line-height:1.15;letter-spacing:-.5px;margin-bottom:12px}
+.note p{font-size:14px;line-height:1.75;color:var(--ink2)}
+.note .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px}
+.note .tags span{font-size:11px;font-weight:700;color:var(--blue);background:rgba(46,75,255,.1);
+  padding:3px 10px;border-radius:999px}
+.note.big{width:320px}
+.note.big h3{font-size:clamp(26px,3vw,38px)}
+
+.loading{display:flex;flex-direction:column;align-items:center;gap:18px;width:100%;padding:40px 0;color:var(--mute)}
+.orbit{position:relative;width:54px;height:54px}
+.orbit i{position:absolute;inset:0;border:2.5px solid transparent;border-top-color:var(--blue);border-radius:50%;animation:orb 1s linear infinite}
+.orbit i:nth-child(2){inset:9px;border-top-color:#8aa0ff;animation-duration:.7s;animation-direction:reverse}
+.orbit i:nth-child(3){inset:18px;border-top-color:#c3cdff;animation-duration:1.3s}
+@keyframes orb{to{transform:rotate(360deg)}}
+.loading .lt{font-size:14px;font-weight:600;text-align:center;line-height:1.6}
+
+.resbtns{display:flex;gap:12px;margin-top:30px}
+.resbtns button{font-family:inherit;font-size:13px;font-weight:700;padding:11px 22px;border-radius:999px;cursor:pointer;transition:.2s}
+.again{background:var(--blue);color:#fff;border:none;box-shadow:0 8px 20px rgba(46,75,255,.3)}
+.again:hover{transform:translateY(-2px)}
+.clearall{background:#fff;border:1.5px solid var(--line);color:var(--ink2)}
+.clearall:hover{border-color:var(--ink);color:var(--ink)}
+
+/* ---------- ghost (drag) ---------- */
+#ghost{
+  position:fixed;left:0;top:0;z-index:60;width:96px;height:96px;border-radius:18px;overflow:hidden;
+  pointer-events:none;opacity:0;box-shadow:var(--shadow-lg);outline:3px solid var(--blue);
+  transition:opacity .15s;
+}
+#ghost img{width:100%;height:100%;object-fit:cover}
+#ghost.on{opacity:1}
+
+/* ---------- modal ---------- */
+.modal{position:fixed;inset:0;z-index:80;background:rgba(20,22,30,.5);backdrop-filter:blur(4px);
+  display:none;align-items:center;justify-content:center;padding:24px}
+.modal.show{display:flex}
+.sheet{background:#fff;border-radius:22px;max-width:460px;width:100%;padding:30px;box-shadow:var(--shadow-lg)}
+.sheet h3{font-size:20px;font-weight:900;margin-bottom:8px}
+.sheet p{font-size:13.5px;color:var(--ink2);line-height:1.7;margin-bottom:16px}
+.sheet input{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;font-size:14px;font-family:inherit;margin-bottom:14px}
+.sheet input:focus{outline:none;border-color:var(--blue)}
+.sheet .row{display:flex;gap:10px;justify-content:flex-end}
+.sheet button{font-family:inherit;font-size:13px;font-weight:700;padding:10px 20px;border-radius:999px;cursor:pointer}
+.sheet .primary{background:var(--blue);color:#fff;border:none}
+.sheet .ghostbtn{background:#fff;border:1.5px solid var(--line);color:var(--ink2)}
+.sheet ol{margin:0 0 4px 18px;font-size:13.5px;line-height:1.9;color:var(--ink2)}
+.sheet ol b{color:var(--ink)}
+.kbd{font-family:"Space Grotesk";background:var(--blue-soft);color:var(--blue);padding:1px 7px;border-radius:6px;font-weight:700;font-size:12px}
 </style>
 </head>
 <body>
-<canvas id="stars"></canvas>
-<div class="noise"></div>
 
-<div class="stage">
-  <header class="top">
-    <div class="brand">
-      <div class="logo"></div>
-      <div>
-        <h1>SPACE<b>·</b>COOK</h1>
-        <div class="sub">太空灵感熔炉 · IDEA FORGE</div>
-      </div>
-    </div>
-    <div class="top-right">
-      <div class="pill" id="keyBtn">⚙ AI 设置</div>
-      <div class="pill" id="howBtn">? 玩法</div>
-    </div>
-  </header>
-
-  <div class="board">
-    <!-- LEFT: space signals -->
-    <section class="rail space">
-      <div class="rail-head">
-        <span class="dot"></span>
-        <div><h2>太空信号</h2><div class="en">SPACE SIGNALS · IE</div></div>
-      </div>
-      <div class="search">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8ea4c4" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-        <input id="searchS" placeholder="搜索太空技术信号…">
-      </div>
-      <div class="list" id="listS"></div>
-    </section>
-
-    <!-- CENTER: cauldron -->
-    <section class="center">
-      <div class="cx-title"><h3>把两样东西拖进熔炉</h3></div>
-      <div class="slots">
-        <div class="slot space" id="slotS" data-side="space">
-          <span class="clearx" data-clear="space">✕</span>
-          <div class="ph"><span class="big">✦</span>太空信号</div>
-        </div>
-        <div class="plus">+</div>
-        <div class="slot earth" id="slotE" data-side="earth">
-          <span class="clearx" data-clear="earth">✕</span>
-          <div class="ph"><span class="big">◆</span>地球产品</div>
-        </div>
-      </div>
-      <div class="cauldron-wrap">
-        <div class="cauldron">
-          <canvas id="cauldronCanvas"></canvas>
-          <div class="ring"></div>
-        </div>
-        <button class="cook-btn" id="cookBtn" disabled>COOKING<span class="spark"></span></button>
-        <div class="cook-hint" id="cookHint">先各选一个拖进来</div>
-      </div>
-    </section>
-
-    <!-- RIGHT: earth products -->
-    <section class="rail earth">
-      <div class="rail-head">
-        <span class="dot"></span>
-        <div><h2>地球产品</h2><div class="en">EARTH PRODUCTS · HT</div></div>
-      </div>
-      <div class="search">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8ea4c4" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-        <input id="searchE" placeholder="搜索地球已有产品…">
-      </div>
-      <div class="list" id="listE"></div>
-    </section>
+<header class="topbar">
+  <div class="brand"><span class="dot"></span>灵感碰撞</div>
+  <div class="topmid">太空 × 地球</div>
+  <div class="topright">
+    <span class="tbtn" id="howBtn">? 玩法</span>
+    <span class="tbtn ai" id="keyBtn">AI 设置</span>
   </div>
-</div>
+</header>
 
-<!-- drag ghost -->
-<div id="ghost"><div class="cid"></div><div class="cname"></div></div>
+<main class="stage">
+  <!-- LEFT : space -->
+  <section class="space">
+    <h2 class="colhead">太空处境</h2>
+    <div class="colsub">SPACE SIGNALS · 独立于地球</div>
+    <div class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+      <input id="searchS" placeholder="搜索太空技术信号…">
+    </div>
+    <div class="grid" id="listS"></div>
+  </section>
 
-<!-- results overlay -->
-<div class="results" id="results">
-  <div class="results-inner">
-    <div class="results-head">
-      <div class="combo" id="comboLine"></div>
-      <h2>熔炉蹦出了 <em>新物种</em></h2>
+  <!-- CENTER : forge -->
+  <div class="center">
+    <div class="slots">
+      <div class="slot" id="slotS" data-side="space">
+        <span class="clearx" data-clear="space">✕</span>
+        <span class="sym">✦</span>太空线索
+      </div>
+      <span class="xmark">×</span>
+      <div class="slot" id="slotE" data-side="earth">
+        <span class="clearx" data-clear="earth">✕</span>
+        <span class="sym">◆</span>地球线索
+      </div>
     </div>
-    <div class="idea-grid" id="ideaGrid"></div>
-    <div class="results-foot">
-      <div class="rbtn" id="againBtn">↻ 再炒一次</div>
-      <div class="rbtn primary" id="newBtn">换组合</div>
-    </div>
+    <button class="cookbtn" id="cookBtn" disabled><span class="spark">✦</span>Cooking</button>
+    <div class="cookhint" id="cookHint">拖入两条线索</div>
   </div>
-</div>
 
-<!-- api key modal -->
+  <!-- RIGHT : earth -->
+  <section class="earth">
+    <h2 class="colhead earth">地球日常</h2>
+    <div class="colsub earth">EARTH PRODUCTS · 隐藏同款</div>
+    <div class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+      <input id="searchE" placeholder="搜索地球已有产品…">
+    </div>
+    <div class="grid" id="listE"></div>
+  </section>
+
+  <!-- RESULTS -->
+  <section class="results-wrap" id="results" style="display:none">
+    <div class="results-head"><span class="bar"></span><h2>生成的灵感</h2></div>
+    <div class="combo" id="comboLine"></div>
+    <div class="notes" id="noteGrid"></div>
+    <div class="resbtns">
+      <button class="again" id="againBtn">✦ 换一批脑洞</button>
+      <button class="clearall" id="clearBtn">清空重选</button>
+    </div>
+  </section>
+</main>
+
+<svg id="wires"></svg>
+<div id="ghost"><img alt=""></div>
+
+<!-- AI key modal -->
 <div class="modal" id="keyModal">
-  <div class="modal-card">
-    <h3>接入真·AI（DeepSeek）</h3>
-    <p>填入你的 DeepSeek API Key，每次 Cooking 都会让 AI 现场生成全新点子。Key 只存在你本地浏览器，不经过任何服务器。<b>留空也能玩</b>——会用内置灵感引擎兜底。</p>
-    <input id="keyInput" type="password" placeholder="sk-xxxxxxxx （可留空）" autocomplete="off">
+  <div class="sheet">
+    <h3>⚙ AI 设置</h3>
+    <p>填入你自己的 DeepSeek API Key，点 Cooking 时将<strong>由 DeepSeek 现场生成</strong>灵感。<br>Key 只存在你本地浏览器（localStorage），<strong>不经任何服务器</strong>。不填也能玩——内置灵感引擎兜底。</p>
+    <input id="keyInput" type="password" placeholder="sk-········">
     <div class="row">
-      <div class="mbtn" id="keyClear">清除</div>
-      <div class="mbtn primary" id="keySave">保存</div>
+      <button class="ghostbtn" id="keyClear">清除</button>
+      <button class="primary" id="keySave">保存</button>
     </div>
-    <div class="note">获取 Key：platform.deepseek.com → API Keys。本页纯静态，不收集任何数据。</div>
+  </div>
+</div>
+
+<!-- how modal -->
+<div class="modal" id="howModal">
+  <div class="sheet">
+    <h3>? 怎么玩</h3>
+    <ol>
+      <li>从左边<b>太空处境</b>拖一张到中间槽位</li>
+      <li>从右边<b>地球日常</b>拖一张到另一个槽位<br><span style="color:#8d8a80">（手机端直接点选也行）</span></li>
+      <li>点 <span class="kbd">Cooking</span>，熔炉把它俩融合</li>
+      <li>蹦出一批<b>太空旅馆新产品</b>的灵感便利贴 ✦</li>
+    </ol>
+    <div class="row" style="margin-top:18px"><button class="primary" id="howClose">开始</button></div>
   </div>
 </div>
 
 <script src="data.js"></script>
+<script src="photos.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
