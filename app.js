@@ -1,498 +1,526 @@
 /* ============================================================
-   灵感碰撞 · 脑暴厨房  —  app logic
-   融合 business-story-hook 卡片链：信号 + 地球 + 场景(S) + 挑战(T)
+   灵感碰撞 · 全屏画布脑暴厨房  —  app.js
+   食材漂浮画布 → 拖进中心熔炉堆成一团 → Cooking 融合爆发
    ============================================================ */
-const $  = (s,el=document)=>el.querySelector(s);
-const $$ = (s,el=document)=>[...el.querySelectorAll(s)];
+const $=(s,el=document)=>el.querySelector(s);
+const $$=(s,el=document)=>[...el.querySelectorAll(s)];
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const esc=s=>(s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 const pick=a=>a[Math.floor(Math.random()*a.length)];
+const rnd=(a,b)=>a+Math.random()*(b-a);
 
-const state={space:null,earth:null,scene:null,challenge:null,cooking:false};
+/* pot holds any number of ingredients, each {kind,item} */
+const state={pot:[],cooking:false,filters:{space:true,earth:true,scene:true,challenge:true}};
 
-/* photo url helper (signals/earth use PHOTOS; spice use SPICE_PHOTOS) */
-function photo(item,w=600){
-  const id=(PHOTOS&&PHOTOS[item.id])||(SPICE_PHOTOS&&SPICE_PHOTOS[item.id]);
+function photo(kind,item,w=400){
+  let id;
+  if(kind==='space'||kind==='earth') id=PHOTOS&&PHOTOS[item.id];
+  else id=SPICE_PHOTOS&&SPICE_PHOTOS[item.id];
   if(id) return `https://images.unsplash.com/photo-${id}?w=${w}&q=72&auto=format&fit=crop`;
   return `https://picsum.photos/seed/${encodeURIComponent(item.id)}/${w}/${w}`;
 }
-
-/* ============================================================
-   1. RENDER photo collage cards
-   ============================================================ */
-function cardHTML(item,side){
-  return `<div class="card" data-id="${item.id}" data-side="${side}" title="${esc(item.name)}">
-    <img loading="lazy" src="${photo(item,520)}" alt="${esc(item.name)}"
-         onerror="this.onerror=null;this.src='https://picsum.photos/seed/${item.id}/400'">
-    <div class="meta"><div class="cid">${item.id}</div><div class="cname">${esc(item.name)}</div></div>
-  </div>`;
-}
-function renderList(side){
-  const data=side==='space'?SPACE_SIGNALS:EARTH_PRODUCTS;
-  const q=(side==='space'?$('#searchS'):$('#searchE')).value.trim().toLowerCase();
-  const el=side==='space'?$('#listS'):$('#listE');
-  const filtered=data.filter(d=>!q||(d.name+d.tag+d.id+(d.kw||[]).join('')).toLowerCase().includes(q));
-  el.innerHTML=filtered.map(d=>cardHTML(d,side)).join('');
-  const usedId=side==='space'?state.space?.id:state.earth?.id;
-  if(usedId){const u=el.querySelector(`[data-id="${usedId}"]`);if(u)u.classList.add('picked');}
-}
-renderList('space');renderList('earth');
-$('#searchS').addEventListener('input',()=>{renderList('space');drawWires();});
-$('#searchE').addEventListener('input',()=>{renderList('earth');drawWires();});
-function findItem(side,id){return (side==='space'?SPACE_SIGNALS:EARTH_PRODUCTS).find(d=>d.id===id);}
-
-/* ============================================================
-   2. SILKY DRAG  (pointer events + eased ghost)
-   ============================================================ */
-const ghost=$('#ghost'), ghostImg=$('#ghost img');
-let drag=null;
-function ghostLoop(){
-  if(drag){
-    drag.gx+=(drag.tx-drag.gx)*0.3;
-    drag.gy+=(drag.ty-drag.gy)*0.3;
-    const rot=Math.max(-12,Math.min(12,(drag.tx-drag.gx)*0.5));
-    ghost.style.transform=`translate(${drag.gx-48}px,${drag.gy-48}px) rotate(${rot}deg) scale(1.02)`;
-  }
-  requestAnimationFrame(ghostLoop);
-}
-requestAnimationFrame(ghostLoop);
-
-function startDrag(e,card){
-  if(card.classList.contains('picked'))return;
-  const side=card.dataset.side, item=findItem(side,card.dataset.id);
-  drag={side,item,tx:e.clientX,ty:e.clientY,gx:e.clientX,gy:e.clientY,srcEl:card};
-  ghostImg.src=photo(item,200);
-  ghost.classList.add('on');
-  card.style.opacity=.4;
-  try{card.setPointerCapture(e.pointerId);}catch(_){}
-}
-function moveDrag(e){
-  if(!drag)return;
-  drag.tx=e.clientX;drag.ty=e.clientY;
-  const over=slotUnder(e.clientX,e.clientY);
-  $$('.slot').forEach(s=>s.classList.toggle('over', s===over));
-}
-function endDrag(e){
-  if(!drag)return;
-  const over=slotUnder(e.clientX,e.clientY);
-  if(drag.srcEl)drag.srcEl.style.opacity='';
-  $$('.slot').forEach(s=>s.classList.remove('over'));
-  ghost.classList.remove('on');
-  if(over) placeInSlot(drag.side,drag.item);
-  drag=null;
-}
-function slotUnder(x,y){
-  for(const s of $$('.slot')){
-    const r=s.getBoundingClientRect();
-    if(x>=r.left-10&&x<=r.right+10&&y>=r.top-10&&y<=r.bottom+10)return s;
-  }
-  return null;
-}
-document.addEventListener('pointerdown',e=>{
-  const card=e.target.closest('.card');
-  if(card){e.preventDefault();startDrag(e,card);}
-},{passive:false});
-document.addEventListener('pointermove',moveDrag,{passive:true});
-document.addEventListener('pointerup',endDrag);
-document.addEventListener('pointercancel',endDrag);
-
-/* click-to-fill (tap) fallback */
-let lastDown=null;
-document.addEventListener('pointerdown',e=>{lastDown={x:e.clientX,y:e.clientY,t:Date.now()};});
-document.addEventListener('pointerup',e=>{
-  const card=e.target.closest('.card');
-  if(card&&lastDown&&!card.classList.contains('picked')){
-    const moved=Math.hypot(e.clientX-lastDown.x,e.clientY-lastDown.y);
-    if(moved<6){const side=card.dataset.side;placeInSlot(side,findItem(side,card.dataset.id));}
-  }
-});
-
-/* ============================================================
-   3. SLOTS (signal + earth)
-   ============================================================ */
-function placeInSlot(side,item){
-  state[side]=item;
-  const slot=side==='space'?$('#slotS'):$('#slotE');
-  slot.classList.add('filled');
-  slot.innerHTML=`<span class="clearx" data-clear="${side}">✕</span>
-    <img src="${photo(item,320)}" alt="" onerror="this.src='https://picsum.photos/seed/${item.id}/300'">
-    <div class="fillcap"><div class="fid">${item.id}</div><div class="fname">${esc(item.name)}</div></div>`;
-  slot.animate([{transform:'scale(.6)',opacity:.3},{transform:'scale(1.1)',offset:.6},{transform:'scale(1)',opacity:1}],
-    {duration:440,easing:'cubic-bezier(.34,1.56,.64,1)'});
-  renderList(side);updateCook();drawWires();dropIntoPot();
-}
-function clearSlot(side){
-  state[side]=null;
-  const slot=side==='space'?$('#slotS'):$('#slotE');
-  slot.classList.remove('filled');
-  const sym=side==='space'?'✦':'◆', label=side==='space'?'太空信号':'地球同款';
-  slot.innerHTML=`<span class="clearx" data-clear="${side}">✕</span><span class="sym">${sym}</span>${label}`;
-  renderList(side);updateCook();drawWires();updatePotCount();
-}
-document.addEventListener('click',e=>{
-  const x=e.target.closest('[data-clear]');
-  if(x){e.stopPropagation();clearSlot(x.dataset.clear);}
-});
-
-/* ============================================================
-   4. SPICE DRAWER : scenes (S卡) + challenges (T卡)
-   ============================================================ */
-function renderChips(){
-  $('#chipsScene').innerHTML=SCENES.map(s=>
-    `<span class="chip scene" data-kind="scene" data-id="${s.id}">${esc(s.name)}<span class="x">✕</span></span>`).join('');
-  $('#chipsChal').innerHTML=CHALLENGES.map(c=>
-    `<span class="chip chal" data-kind="challenge" data-id="${c.id}">${esc(c.name)}<span class="x">✕</span></span>`).join('');
-}
-renderChips();
-function spiceItem(kind,id){return (kind==='scene'?SCENES:CHALLENGES).find(x=>x.id===id);}
-$('#chipsScene').addEventListener('click',e=>onChip(e));
-$('#chipsChal').addEventListener('click',e=>onChip(e));
-function onChip(e){
-  const chip=e.target.closest('.chip');if(!chip)return;
-  const kind=chip.dataset.kind, id=chip.dataset.id;
-  const key=kind==='scene'?'scene':'challenge';
-  const chipsWrap=chip.parentElement;
-  if(state[key]&&state[key].id===id){ state[key]=null; }
-  else { state[key]=spiceItem(kind,id); }
-  // single-select per group
-  $$('.chip',chipsWrap).forEach(c=>c.classList.toggle('on', state[key]&&c.dataset.id===state[key].id));
-  chip.animate([{transform:'scale(.9)'},{transform:'scale(1.08)'},{transform:'scale(1)'}],{duration:260,easing:'cubic-bezier(.34,1.56,.64,1)'});
-  updateSpiceBadge();updateCook();updatePotCount();
-}
-function updateSpiceBadge(){
-  const n=(state.scene?1:0)+(state.challenge?1:0);
-  const hot=$('#spiceHot'), tog=$('#spiceToggle');
-  hot.textContent=n;tog.classList.toggle('has',n>0);
-}
-/* drawer toggle */
-$('#spiceToggle').addEventListener('click',()=>$('#spice').classList.toggle('open'));
-
-/* dice — lucky mode : random pick of all 4 ingredients */
-$('#diceBtn').addEventListener('click',()=>{
-  placeInSlot('space',pick(SPACE_SIGNALS));
-  placeInSlot('earth',pick(EARTH_PRODUCTS));
-  state.scene=pick(SCENES); state.challenge=pick(CHALLENGES);
-  $$('#chipsScene .chip').forEach(c=>c.classList.toggle('on',c.dataset.id===state.scene.id));
-  $$('#chipsChal .chip').forEach(c=>c.classList.toggle('on',c.dataset.id===state.challenge.id));
-  $('#spice').classList.add('open');
-  updateSpiceBadge();updateCook();updatePotCount();
-  $('#diceBtn').animate([{transform:'rotate(0) scale(1)'},{transform:'rotate(360deg) scale(1.06)'},{transform:'rotate(360deg) scale(1)'}],{duration:500,easing:'ease-out'});
-});
-
-/* ============================================================
-   5. FORGE POT  (visual feedback as ingredients enter)
-   ============================================================ */
-const pot=$('#pot'), potCount=$('#potCount');
-function ingredientCount(){return (state.space?1:0)+(state.earth?1:0)+(state.scene?1:0)+(state.challenge?1:0);}
-function updatePotCount(){
-  const n=ingredientCount();
-  potCount.textContent=n;potCount.classList.toggle('on',n>0);
-  const emo=['🫕','🫕','🍲','🍲','🌟'][n]||'🌟';
-  $('#potEm').textContent=emo;
-}
-function dropIntoPot(){
-  updatePotCount();
-  // little pop on the core
-  const core=$('.pot .core');
-  core.animate([{transform:'scale(1)'},{transform:'scale(.86)'},{transform:'scale(1.1)'},{transform:'scale(1)'}],
-    {duration:420,easing:'cubic-bezier(.34,1.56,.64,1)'});
-}
-
-/* ============================================================
-   6. COOK readiness
-   ============================================================ */
-function updateCook(){
-  const ready=state.space&&state.earth;
-  const btn=$('#cookBtn');
-  btn.disabled=!ready||state.cooking;
-  const hint=$('#cookHint');
-  if(state.cooking){hint.textContent='灵感正在熔炉里翻滚…';return;}
-  const extra=[];if(state.scene)extra.push('场景「'+state.scene.name+'」');if(state.challenge)extra.push('挑战「'+state.challenge.name+'」');
-  if(ready){
-    hint.innerHTML=extra.length? `已加料：${extra.join(' + ')}　点火吧 🔥` : '两味已齐，点火吧 🔥（想更精准可加点料）';
-  }else if(state.space||state.earth){
-    hint.textContent='还差一味——'+(state.space?'再选一个地球同款':'再选一个太空信号');
-  }else{
-    hint.textContent='拖入一个太空信号 + 一个地球同款';
-  }
-}
-
-/* ============================================================
-   7. CURVED WIRE CONNECTORS  (picked card -> center ×)
-   ============================================================ */
-const wires=$('#wires');
-function centerPoint(){
-  const x=$('.xmark').getBoundingClientRect();
-  return {x:x.left+x.width/2, y:x.top+x.height/2};
-}
-function curve(from,to,dir){
-  const c1x=from.x+dir*Math.min(120,Math.abs(to.x-from.x)*0.5);
-  const c2x=to.x-dir*Math.min(120,Math.abs(to.x-from.x)*0.5);
-  return `M ${from.x} ${from.y} C ${c1x} ${from.y}, ${c2x} ${to.y}, ${to.x} ${to.y}`;
-}
-function drawWires(){
-  wires.innerHTML='';
-  const draw=(side,toSlotSel,dir)=>{
-    const it=state[side];if(!it)return;
-    const cardEl=document.querySelector(`.card[data-id="${it.id}"]`);
-    const slot=$(toSlotSel).getBoundingClientRect();
-    const slotPt={x:dir>0?slot.left:slot.right, y:slot.top+slot.height/2};
-    if(cardEl){
-      const r=cardEl.getBoundingClientRect();
-      const from={x:dir>0?r.right:r.left, y:r.top+r.height/2};
-      addPath(curve(from,slotPt,dir),from,'w-'+side);
-    }
-  };
-  draw('space','#slotS',1);
-  draw('earth','#slotE',-1);
-}
-function addPath(d,from,cls){
-  const ns='http://www.w3.org/2000/svg';
-  const p=document.createElementNS(ns,'path');p.setAttribute('d',d);p.setAttribute('class',cls||'');
-  wires.appendChild(p);
-  if(p.getTotalLength){const L=p.getTotalLength();
-    p.style.strokeDasharray=L;p.style.strokeDashoffset=L;
-    p.animate([{strokeDashoffset:L},{strokeDashoffset:0}],{duration:500,easing:'ease-out',fill:'forwards'});
-  }
-  const dot=document.createElementNS(ns,'circle');
-  dot.setAttribute('cx',from.x);dot.setAttribute('cy',from.y);dot.setAttribute('r',4.5);
-  wires.appendChild(dot);
-}
-addEventListener('resize',drawWires);
-addEventListener('scroll',drawWires,{passive:true});
-
-/* ============================================================
-   8. COOKING sequence (boil -> burst -> popcorn notes)
-   ============================================================ */
-$('#cookBtn').addEventListener('click',cook);
-async function cook(){
-  if(!state.space||!state.earth||state.cooking)return;
-  state.cooking=true;updateCook();
-  const btn=$('#cookBtn');btn.classList.add('cooking');btn.innerHTML='<span class="spark">✦</span>熔炉翻滚…';
-
-  // pot boils
-  pot.classList.add('hot');
-  // shake slots
-  const slots=$('.slots');
-  slots.animate([{transform:'translate(0,0) rotate(0)'},{transform:'translate(-4px,2px) rotate(-1deg)'},
-    {transform:'translate(4px,-2px) rotate(1deg)'},{transform:'translate(-3px,1px) rotate(-.6deg)'},
-    {transform:'translate(0,0) rotate(0)'}],{duration:420,iterations:4,easing:'ease-in-out'});
-  // pulse wires
-  $$('#wires path').forEach(p=>p.animate([{strokeWidth:2.5},{strokeWidth:5},{strokeWidth:2.5}],
-    {duration:500,iterations:3,easing:'ease-in-out'}));
-  // swirling sparks around the pot
-  swirlAroundPot(900);
-  await sleep(1050);
-
-  // burst from pot center
-  const pc=pot.getBoundingClientRect();
-  burstAt({x:pc.left+pc.width/2,y:pc.top+pc.height/2});
-  const flash=document.createElement('div');
-  flash.style.cssText='position:fixed;inset:0;z-index:70;pointer-events:none;opacity:0;background:radial-gradient(circle at 50% 42%,rgba(46,75,255,.3),transparent 55%)';
-  document.body.appendChild(flash);
-  flash.animate([{opacity:0},{opacity:1,offset:.25},{opacity:0}],{duration:650,easing:'ease-out'});
-  setTimeout(()=>flash.remove(),660);
-  await sleep(300);
-
-  // fetch + render
-  openResults();showLoader();
-  let ideas;
-  try{ideas=await getIdeas();}
-  catch(err){console.warn('AI failed → fallback',err);ideas=localIdeas();}
-  renderNotes(ideas);
-  pot.classList.remove('hot');
-  state.cooking=false;
-  btn.classList.remove('cooking');btn.innerHTML='<span class="spark">✦</span>Cooking';
-  updateCook();
-  $('#results').scrollIntoView({behavior:'smooth',block:'start'});
-}
-
-/* particle burst */
-function burstAt(pt){
-  const N=30;
-  for(let i=0;i<N;i++){
-    const d=document.createElement('div');
-    const sz=4+Math.random()*7;
-    d.style.cssText=`position:fixed;left:${pt.x}px;top:${pt.y}px;width:${sz}px;height:${sz}px;border-radius:50%;
-      background:${Math.random()>.4?'#2E4BFF':'#9db0ff'};z-index:72;pointer-events:none`;
-    document.body.appendChild(d);
-    const ang=Math.random()*Math.PI*2, dist=70+Math.random()*200;
-    d.animate([{transform:'translate(0,0) scale(1)',opacity:1},
-      {transform:`translate(${Math.cos(ang)*dist}px,${Math.sin(ang)*dist}px) scale(0)`,opacity:0}],
-      {duration:700+Math.random()*400,easing:'cubic-bezier(.2,.8,.2,1)',fill:'forwards'});
-    setTimeout(()=>d.remove(),1200);
-  }
-}
-/* sparks swirling into the pot while boiling */
-function swirlAroundPot(dur){
-  const pc=pot.getBoundingClientRect();const cx=pc.left+pc.width/2, cy=pc.top+pc.height/2;
-  for(let i=0;i<16;i++){
-    const d=document.createElement('div');const sz=3+Math.random()*5;
-    d.style.cssText=`position:fixed;width:${sz}px;height:${sz}px;border-radius:50%;background:${Math.random()>.5?'#2E4BFF':'#c3cdff'};z-index:71;pointer-events:none`;
-    document.body.appendChild(d);
-    const R=50+Math.random()*30, a0=Math.random()*Math.PI*2, spins=1+Math.random();
-    const frames=[];for(let t=0;t<=1;t+=.1){const a=a0+spins*Math.PI*2*t;const r=R*(1-t*.85);
-      frames.push({transform:`translate(${cx+Math.cos(a)*r}px,${cy+Math.sin(a)*r}px)`,opacity:t<.85?1:0});}
-    d.animate(frames,{duration:dur,easing:'ease-in',fill:'forwards'});
-    setTimeout(()=>d.remove(),dur+50);
-  }
-}
-
-/* ============================================================
-   9. RESULTS (sticky notes, popcorn pop-in)
-   ============================================================ */
-const results=$('#results'), noteGrid=$('#noteGrid'), recipeLine=$('#recipeLine');
-function ingrChips(){
-  const bits=[`<span class="ingr s-sig">✦ ${esc(state.space.name)}</span>`,
-              `<span class="ingr s-ert">◆ ${esc(state.earth.name)}</span>`];
-  if(state.scene)bits.push(`<span class="ingr s-scn">场景·${esc(state.scene.name)}</span>`);
-  if(state.challenge)bits.push(`<span class="ingr s-chl">挑战·${esc(state.challenge.name)}</span>`);
-  return bits.join(' + ');
-}
-function openResults(){
-  results.style.display='block';
-  recipeLine.innerHTML=`本次配方：${ingrChips()} &nbsp;→&nbsp; 太空旅馆新物种`;
-}
-function showLoader(){
-  noteGrid.innerHTML=`<div class="loading">
-    <div class="orbit"><i></i><i></i><i></i></div>
-    <div class="lt">正在把这组食材投入熔炉<br>合成太空旅馆新物种中…</div>
-  </div>`;
-}
-function renderNotes(ideas){
-  noteGrid.innerHTML='';
-  ideas.forEach((idea,i)=>{
-    const el=document.createElement('div');el.className='note';
-    const moment=idea.moment?`<div class="moment"><span class="ml">它接住了哪个时刻</span>${esc(idea.moment)}</div>`:'';
-    el.innerHTML=`<div class="remix" title="把这条丢回锅里再炖">↻</div>
-      <div class="num">IDEA ${String(i+1).padStart(2,'0')}</div>
-      <h3>${esc(idea.title)}</h3>
-      <div class="value">${idea.value||esc(idea.desc||'')}</div>
-      ${moment}
-      <div class="tags">${(idea.tags||[]).map(t=>`<span>${esc(t)}</span>`).join('')}</div>`;
-    el.querySelector('.remix').addEventListener('click',()=>remix(idea));
-    noteGrid.appendChild(el);
-    // popcorn: pop up with slight random x + rotate settle
-    const rx=(Math.random()*2-1)*10;
-    el.animate([{opacity:0,transform:`translateY(46px) scale(.82) rotate(${rx}deg)`},
-      {opacity:1,transform:'translateY(-8px) scale(1.03)',offset:.7},
-      {opacity:1,transform:'translateY(0) scale(1) rotate(0)'}],
-      {duration:680,delay:i*150,easing:'cubic-bezier(.22,1.3,.36,1)',fill:'forwards'});
-  });
-}
-/* remix: feed an idea back into the pot as a new "earth" twin, keep signal/scene/challenge */
-function remix(idea){
-  state.earth={id:'MIX', name:idea.title, tag:'脑暴产物', desc:(idea.plain||idea.title), kw:(idea.tags||[]).slice(0,3)};
-  const slot=$('#slotE');slot.classList.add('filled');
-  slot.innerHTML=`<span class="clearx" data-clear="earth">✕</span>
-    <div style="position:absolute;inset:0;background:linear-gradient(135deg,#2E4BFF,#8aa0ff);"></div>
-    <div class="fillcap"><div class="fid">REMIX</div><div class="fname">${esc(idea.title)}</div></div>`;
-  updateCook();updatePotCount();
-  window.scrollTo({top:0,behavior:'smooth'});
-  pot.animate([{transform:'scale(1)'},{transform:'scale(1.12)'},{transform:'scale(1)'}],{duration:400,easing:'cubic-bezier(.34,1.56,.64,1)'});
-  $('#cookHint').innerHTML='🔁 已把「'+esc(idea.title)+'」丢回锅里——再点火，灵感滚雪球';
-}
-$('#againBtn').addEventListener('click',async()=>{
-  showLoader();
-  let ideas;try{ideas=await getIdeas(true);}catch(e){ideas=localIdeas();}
-  renderNotes(ideas);
-});
-$('#clearBtn').addEventListener('click',()=>{
-  clearSlot('space');clearSlot('earth');
-  state.scene=null;state.challenge=null;
-  $$('.chip').forEach(c=>c.classList.remove('on'));
-  updateSpiceBadge();updatePotCount();
-  results.style.display='none';
-  window.scrollTo({top:0,behavior:'smooth'});
-});
-
-/* ============================================================
-   10. AI (DeepSeek) + local fallback — 融合卡片链 prompt
-   ============================================================ */
-const KEY='spacecook_deepseek_key';
-const getKey=()=>localStorage.getItem(KEY)||'';
-function buildPrompt(variety){
-  const s=state.space,e=state.earth,sc=state.scene,ch=state.challenge;
-  let p=
-`你是太空产品创新的头脑风暴主厨，熟悉"设计未来工作坊"的共创方法论（故事卡→任务卡→时刻卡→能力卡）。
-现在要为【太空旅馆 / 太空旅居】场景，把下面这些"食材"熔炉融合，脑暴出全新的产品 / 服务 / 系统。
-
-【太空信号·要用的硬道理】${s.id} ${s.name}：${s.desc}（关键词：${(s.kw||[]).join('、')}）
-【地球同款·可借鉴的好解法】${e.id} ${e.name}：${e.desc}（关键词：${(e.kw||[]).join('、')}）`;
-  if(sc)p+=`\n【场景·真实处境(故事卡)】${sc.name}：${sc.who}——${sc.moment}。情绪：${sc.emo}。`;
-  if(ch)p+=`\n【挑战·要破解的硬约束(任务卡)】${ch.name}：${ch.block}。破题方向：${ch.twist}。`;
-  p+=`
-
-请脑暴 4 个点子，每个必须包含：
-- title：6-12字、有记忆点、像展览标题的产品名
-- value：一句话价值，严格用这个句式填空并用中文写出完整句子——"我们为【谁】，在【什么时刻】，通过【怎么做】，带来【什么改变】"。其中【谁】【什么时刻】【怎么做】【什么改变】四处各用<b>…</b>包裹（会在网页高亮）。
-- moment：20-38字，具体描述"它接住了太空旅客的哪个关键时刻"，要有画面、有情绪${sc?('，紧扣场景「'+sc.name+'」'):''}。
-- plain：15-30字的纯文本一句话概括（不带标签，用于二次创作）。
-- tags：3个关键词标签。
-
-要求：大胆、具体、有想象力${ch?('，必须正面破解「'+ch.name+'」这个约束'):''}${variety?'，这一批要和常规思路不同，给我意外的脑洞':''}。
-严格只返回 JSON 数组，不要任何解释：
-[{"title":"","value":"","moment":"","plain":"","tags":["","",""]}]`;
-  return p;
-}
-async function getIdeas(variety=false){
-  const key=getKey();
-  if(!key)return localIdeas();
-  const res=await fetch('https://api.deepseek.com/chat/completions',{
-    method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
-    body:JSON.stringify({model:'deepseek-chat',temperature:variety?1.3:1.05,messages:[{role:'user',content:buildPrompt(variety)}]})});
-  if(!res.ok)throw new Error('HTTP '+res.status);
-  const data=await res.json();
-  let txt=data.choices[0].message.content.trim().replace(/^```json?/i,'').replace(/```$/,'').trim();
-  return JSON.parse(txt).slice(0,4);
-}
-/* ---- local fallback engine (no key) — 也按卡片链结构拼 ---- */
-function localIdeas(){
-  const s=state.space,e=state.earth,sc=state.scene,ch=state.challenge;
-  const sk=(s.kw||[s.tag]), ek=(e.kw||[e.tag]);
-  const clean=n=>n.replace(/（.*?）/g,'').replace(/\s+[A-Za-z].*$/,'').trim();
-  const en=clean(e.name), sn=clean(s.name);
-  const who=sc?sc.who:pick(['首批太空旅客','长期旅居者','太空蜜月情侣','零重力里的孩子','失重中的长者']);
-  const when=sc?sc.name:pick(['入住第一夜','失重早餐','舷窗凝视的时刻','返程前最后一晚']);
-  const forms=['可穿戴装置','舱内交互系统','仪式化体验','模块化家具','共生装置'];
-  const chTwist=ch?ch.twist:'把太空的硬约束变成独特卖点';
-  const chName=ch?ch.name:'失重';
-  const V=(who,when,how,gain)=>`我们为<b>${who}</b>，在<b>${when}</b>，通过<b>${how}</b>，带来<b>${gain}</b>。`;
-  const M=txt=>sc?`${sc.moment.slice(0,30)}——这一刻它正好出现。`:txt;
+function allItems(){
   return [
-    {title:`零重力${en.slice(0,5)}`,
-     value:V(who,when,`把「${sn}」的${pick(sk)}原理注入${en}`,`一款失重舱里更好用的${pick(forms)}`),
-     moment:M(`${who}第一次觉得"这不是地球，却更称手"。`),
-     plain:`把${sn}原理注入${en}，做失重版产品`,
-     tags:[pick(sk),pick(ek),'太空旅馆']},
-    {title:`${chName}·反转${en.slice(0,3)}`,
-     value:V(who,when,`借${en}的做法正面破解「${chName}」`,`${chTwist}`),
-     moment:M(`当${chName}袭来，${who}第一次感到被稳稳接住。`),
-     plain:`用${en}的思路破解${chName}这个约束`,
-     tags:[chName,pick(ek),'破局']},
-    {title:`会呼吸的${en.slice(0,4)}`,
-     value:V(who,when,`借「${sn}」的闭环再生思路升级${en}`,'能自循环、零浪费的太空旅馆配套'),
-     moment:M(`${who}住一晚，也在悄悄参与整座旅馆的生态循环。`),
-     plain:`用${sn}闭环思路做零浪费版${en}`,
-     tags:['资源闭环',pick(ek),'可持续']},
-    {title:`${pick(['星际','轨道','失重','深空'])}仪式·${e.tag}`,
-     value:V(who,when,`把实用的${en}变成一场结合「${pick(sk)}」的太空仪式`,'只在太空才成立、值得一生回忆的体验'),
-     moment:M(`${who}在${when}，第一次为"活在太空"这件事而感动。`),
-     plain:`把${en}做成只属于太空的情感仪式`,
-     tags:['情感设计','仪式感',pick(sk)]},
+    ...SPACE_SIGNALS.map(x=>({kind:'space',item:x})),
+    ...EARTH_PRODUCTS.map(x=>({kind:'earth',item:x})),
+    ...SCENES.map(x=>({kind:'scene',item:x})),
+    ...CHALLENGES.map(x=>({kind:'challenge',item:x})),
+  ];
+}
+const inPot=(kind,id)=>state.pot.some(p=>p.kind===kind&&p.item.id===id);
+const key=it=>it.kind+':'+it.item.id;
+
+/* ---------- scatter layout ----------
+   Place tiles in a loose ring around the center stage, avoiding the
+   middle (where the forge lives). space→upper-left bias, earth→lower-right,
+   scene/challenge sprinkled. Positions are vw/vh fractions. */
+const canvasEl=()=>$('#canvas');
+function scatterPositions(items){
+  const W=innerWidth,H=innerHeight;
+  const cx=W/2,cy=H/2;
+  const holeR=Math.min(W,H)*0.30;      // keep clear of the forge
+  const maxR=Math.min(W,H)*0.62;
+  const out=[];const placed=[];
+  // bias angle ranges per kind so categories cluster softly
+  const biasArc={space:[-2.7,-0.6],earth:[0.5,2.6],scene:[2.4,3.9],challenge:[-0.9,0.9]};
+  items.forEach((it,i)=>{
+    let x,y,tries=0,ok=false;
+    const arc=biasArc[it.kind]||[0,6.28];
+    do{
+      const ang=rnd(arc[0],arc[1])+rnd(-0.3,0.3);
+      const r=rnd(holeR+30,maxR);
+      x=cx+Math.cos(ang)*r*rnd(0.85,1.15);
+      y=cy+Math.sin(ang)*r*rnd(0.8,1.05);
+      x=Math.max(70,Math.min(W-100,x));
+      y=Math.max(90,Math.min(H-120,y));
+      ok=placed.every(p=>Math.hypot(p.x-x,p.y-y)>96)&&Math.hypot(cx-x,cy-y)>holeR;
+      tries++;
+    }while(!ok&&tries<40);
+    placed.push({x,y});out.push({x,y});
+  });
+  return out;
+}
+
+let CURRENT=[];   // currently shown pool of {kind,item}
+function samplePool(){
+  // show a curated subset so the canvas feels full but not cramped
+  const s=[...SPACE_SIGNALS].sort(()=>Math.random()-0.5).slice(0,9);
+  const e=[...EARTH_PRODUCTS].sort(()=>Math.random()-0.5).slice(0,9);
+  const sc=[...SCENES].sort(()=>Math.random()-0.5).slice(0,5);
+  const ch=[...CHALLENGES].sort(()=>Math.random()-0.5).slice(0,5);
+  return [
+    ...s.map(x=>({kind:'space',item:x})),
+    ...e.map(x=>({kind:'earth',item:x})),
+    ...sc.map(x=>({kind:'scene',item:x})),
+    ...ch.map(x=>({kind:'challenge',item:x})),
   ];
 }
 
-/* ============================================================
-   11. modals
-   ============================================================ */
-const keyModal=$('#keyModal'), howModal=$('#howModal');
-$('#keyBtn').addEventListener('click',()=>{$('#keyInput').value=getKey();keyModal.classList.add('show');});
-$('#keySave').addEventListener('click',()=>{const v=$('#keyInput').value.trim();v?localStorage.setItem(KEY,v):localStorage.removeItem(KEY);keyModal.classList.remove('show');});
-$('#keyClear').addEventListener('click',()=>{localStorage.removeItem(KEY);$('#keyInput').value='';});
-keyModal.addEventListener('click',e=>{if(e.target===keyModal)keyModal.classList.remove('show');});
-$('#howBtn').addEventListener('click',()=>howModal.classList.add('show'));
-$('#howClose').addEventListener('click',()=>howModal.classList.remove('show'));
-howModal.addEventListener('click',e=>{if(e.target===howModal)howModal.classList.remove('show');});
+function tileHTML(it){
+  const k=it.kind,o=it.item;
+  if(k==='space'||k==='earth'){
+    return `<img src="${photo(k,o,260)}" alt="" loading="lazy" referrerpolicy="no-referrer">
+      <span class="kind"></span>
+      <div class="tlabel">${esc(o.name)}</div>`;
+  }
+  // scene / challenge = text chip tile
+  const sub=k==='scene'?'SCENE · 场景':'CHALLENGE · 挑战';
+  return `<span class="kind"></span><div class="tt">${esc(o.name)}</div><div class="ts">${sub}</div>`;
+}
 
-updateCook();updatePotCount();updateSpiceBadge();
+function renderCanvas(){
+  const cv=canvasEl();cv.innerHTML='';
+  CURRENT=samplePool();
+  const pos=scatterPositions(CURRENT);
+  CURRENT.forEach((it,i)=>{
+    const el=document.createElement('div');
+    el.className='tile'+((it.kind==='space'||it.kind==='earth')?'':' txt')+((it.kind==='space'||it.kind==='scene')?' round':'');
+    el.dataset.kind=it.kind;el.dataset.key=key(it);
+    const sz=it.kind==='space'||it.kind==='earth'?rnd(78,104):rnd(84,100);
+    el.style.setProperty('--sz',sz.toFixed(0)+'px');
+    el.style.setProperty('--rot',rnd(-5,5).toFixed(1)+'deg');
+    el.style.setProperty('--dur',rnd(5.5,9).toFixed(1)+'s');
+    el.style.setProperty('--del',rnd(0,3).toFixed(1)+'s');
+    el.style.left=(pos[i].x-sz/2)+'px';
+    el.style.top=(pos[i].y-sz/2)+'px';
+    el.innerHTML=tileHTML(it);
+    if(inPot(it.kind,it.item.id)) el.classList.add('inpot');
+    attachDrag(el,it);
+    cv.appendChild(el);
+  });
+  applyFilters();
+}
+
+function applyFilters(){
+  $$('.tile',canvasEl()).forEach(el=>{
+    const on=state.filters[el.dataset.kind];
+    el.classList.toggle('hidden',!on);
+  });
+}
+
+/* ---------- drag to center ---------- */
+const ghost=$('#ghost');
+let drag=null; // {it, el, started}
+
+function forgeRect(){return $('#catcher').getBoundingClientRect();}
+function overForge(x,y){
+  const r=forgeRect();const cx=r.left+r.width/2,cy=r.top+r.height/2;
+  return Math.hypot(x-cx,y-cy) < r.width/2+40;
+}
+
+function attachDrag(el,it){
+  el.addEventListener('pointerdown',e=>{
+    if(el.classList.contains('inpot'))return;
+    e.preventDefault();
+    const sz=parseFloat(getComputedStyle(el).getPropertyValue('--sz'))||88;
+    drag={it,el,started:false,sz};
+    el.setPointerCapture(e.pointerId);
+    drag.pid=e.pointerId;
+    moveGhost(e.clientX,e.clientY,true);
+  });
+  el.addEventListener('pointermove',e=>{
+    if(!drag||drag.el!==el)return;
+    if(!drag.started){drag.started=true;el.classList.add('dragging');setGhost(it,drag.sz);ghost.classList.add('on');}
+    moveGhost(e.clientX,e.clientY);
+    $('#catcher').classList.toggle('over',overForge(e.clientX,e.clientY));
+  });
+  const end=e=>{
+    if(!drag||drag.el!==el)return;
+    try{el.releasePointerCapture(drag.pid);}catch(_){}
+    el.classList.remove('dragging');
+    ghost.classList.remove('on');
+    $('#catcher').classList.remove('over');
+    if(drag.started && overForge(e.clientX,e.clientY)){
+      addToPot(it);
+      el.classList.add('inpot');
+    }else if(!drag.started){
+      // treat as tap: on mobile a tap also drops into the pot
+      addToPot(it); el.classList.add('inpot');
+    }
+    drag=null;
+  };
+  el.addEventListener('pointerup',end);
+  el.addEventListener('pointercancel',end);
+}
+
+function setGhost(it,sz){
+  ghost.style.width=ghost.style.height=(sz||88)+'px';
+  if(it.kind==='space'||it.kind==='earth'){
+    ghost.classList.remove('txt');
+    ghost.innerHTML=`<img src="${photo(it.kind,it.item,220)}" alt="" referrerpolicy="no-referrer">`;
+  }else{
+    ghost.classList.add('txt');
+    ghost.style.background=it.kind==='scene'?'linear-gradient(140deg,#1bbf94,#0f7d61)':'linear-gradient(140deg,#f0774c,#cf4f27)';
+    ghost.innerHTML=esc(it.item.name);
+  }
+  ghost.style.borderRadius=(it.kind==='space'||it.kind==='scene')?'50%':'14px';
+}
+function moveGhost(x,y,silent){
+  const w=parseFloat(ghost.style.width)||88;
+  ghost.style.transform=`translate(${x-w/2}px,${y-w/2}px) scale(${silent?0.9:1.06})`;
+}
+
+/* ---------- pot / cluster ---------- */
+function addToPot(it){
+  if(inPot(it.kind,it.item.id))return;
+  state.pot.push(it);
+  renderCluster(true);
+  refreshCook();
+}
+function removeFromPot(k,id){
+  state.pot=state.pot.filter(p=>!(p.kind===k&&p.item.id===id));
+  // un-hide its canvas tile if present
+  const t=$(`.tile[data-key="${k}:${id}"]`,canvasEl());
+  if(t)t.classList.remove('inpot');
+  renderCluster();
+  refreshCook();
+}
+function clearPot(){
+  state.pot=[];
+  $$('.tile.inpot',canvasEl()).forEach(t=>t.classList.remove('inpot'));
+  renderCluster();refreshCook();
+}
+
+function renderCluster(justAdded){
+  const cl=$('#cluster'),stage=$('#stage');
+  cl.innerHTML='';
+  const n=state.pot.length;
+  stage.classList.toggle('has',n>0);
+  const R=n<=1?0:Math.min(66,34+n*6);
+  state.pot.forEach((p,i)=>{
+    const el=document.createElement('div');
+    const round=(p.kind==='space'||p.kind==='scene');
+    el.className='pin'+((p.kind==='scene'||p.kind==='challenge')?' txt':'')+(round?' round':'');
+    el.dataset.kind=p.kind;
+    const ang=(i/Math.max(1,n))*Math.PI*2 - Math.PI/2;
+    const r=n===1?0:R;
+    const dx=Math.cos(ang)*r, dy=Math.sin(ang)*r;
+    const rot=rnd(-8,8);
+    if(p.kind==='space'||p.kind==='earth'){
+      el.innerHTML=`<img src="${photo(p.kind,p.item,180)}" alt="" referrerpolicy="no-referrer"><span class="ek"></span>`;
+    }else{
+      el.innerHTML=esc(p.item.name)+`<span class="ek"></span>`;
+    }
+    const x=document.createElement('span');x.className='pinx';x.textContent='✕';
+    x.onclick=ev=>{ev.stopPropagation();removeFromPot(p.kind,p.item.id);};
+    el.appendChild(x);
+    el.style.transform=`translate(${dx}px,${dy}px) rotate(${rot}deg)`;
+    el.style.zIndex=20+i;
+    if(justAdded&&i===n-1){
+      el.animate([{transform:`translate(${dx}px,${dy}px) scale(1.5) rotate(${rot}deg)`,opacity:0},
+                  {transform:`translate(${dx}px,${dy}px) scale(1) rotate(${rot}deg)`,opacity:1}],
+                 {duration:460,easing:'cubic-bezier(.34,1.56,.64,1)'});
+    }
+    cl.appendChild(el);
+  });
+}
+
+function hasSignal(){return state.pot.some(p=>p.kind==='space');}
+function hasEarth(){return state.pot.some(p=>p.kind==='earth');}
+function canCook(){return hasSignal()&&hasEarth();}
+
+function refreshCook(){
+  const btn=$('#cookBtn'),hint=$('#cookHint'),stage=$('#stage');
+  const ok=canCook();
+  btn.disabled=!ok||state.cooking;
+  stage.classList.toggle('hot',ok&&!state.cooking);
+  const n=state.pot.length;
+  if(n===0)hint.textContent='把食材拖进中心熔炉';
+  else if(!hasSignal())hint.textContent='还差一个 ✦ 太空信号';
+  else if(!hasEarth())hint.textContent='还差一个 ◆ 地球同款';
+  else hint.innerHTML=`锅里 <b style="color:var(--blue)">${n}</b> 味 · 可以点火了`;
+}
+
+/* ---------- ring dots (SATTO decorative ring) ---------- */
+function buildRingDots(){
+  const rd=$('#ringDots');rd.innerHTML='';
+  const N=40;const r=rd.clientWidth/2||168;
+  for(let i=0;i<N;i++){
+    const a=(i/N)*Math.PI*2;
+    const d=document.createElement('i');
+    d.style.transform=`translate(${Math.cos(a)*r}px,${Math.sin(a)*r}px)`;
+    rd.appendChild(d);
+  }
+}
+
+/* ---------- 手气模式: auto-fill a tasty combo ---------- */
+function luckyFill(){
+  clearPot();
+  const sig=pick(SPACE_SIGNALS), ert=pick(EARTH_PRODUCTS);
+  const sc=Math.random()<0.8?pick(SCENES):null;
+  const ch=Math.random()<0.8?pick(CHALLENGES):null;
+  const combo=[{kind:'space',item:sig},{kind:'earth',item:ert}];
+  if(sc)combo.push({kind:'scene',item:sc});
+  if(ch)combo.push({kind:'challenge',item:ch});
+  // ensure those tiles exist on canvas (add fresh if not in current pool)
+  combo.forEach((c,i)=>setTimeout(()=>{
+    addToPot(c);
+    const t=$(`.tile[data-key="${key(c)}"]`,canvasEl());
+    if(t)t.classList.add('inpot');
+  },i*160));
+}
+
+/* ---------- filters ---------- */
+function wireFilters(){
+  $$('.fxpill').forEach(p=>{
+    p.onclick=()=>{
+      const k=p.dataset.kind;
+      state.filters[k]=!state.filters[k];
+      p.classList.toggle('on',state.filters[k]);
+      applyFilters();
+    };
+  });
+}
+
+/* ---------- COOKING ---------- */
+async function cook(){
+  if(state.cooking||!canCook())return;
+  state.cooking=true;refreshCook();
+  const btn=$('#cookBtn');btn.classList.add('cooking');
+  const stage=$('#stage'),catcher=$('#catcher');
+
+  // vortex suck-in: pins spin inward then burst
+  const pins=$$('.pin',$('#cluster'));
+  pins.forEach((pin,i)=>{
+    pin.animate([
+      {transform:pin.style.transform,offset:0},
+      {transform:`translate(0,0) rotate(${rnd(180,360)}deg) scale(.4)`,offset:.7,opacity:1},
+      {transform:`translate(0,0) rotate(${rnd(360,540)}deg) scale(0)`,offset:1,opacity:0}
+    ],{duration:900,easing:'cubic-bezier(.6,0,.9,.3)',fill:'forwards'});
+  });
+  catcher.animate([
+    {transform:'scale(1)'},{transform:'scale(.82) rotate(8deg)',offset:.55},
+    {transform:'scale(1.22) rotate(-4deg)',offset:.78},{transform:'scale(1)'}
+  ],{duration:1000,easing:'cubic-bezier(.34,1.56,.64,1)'});
+  // flash burst
+  burst(stage);
+  await sleep(760);
+
+  // open results overlay in loading state
+  openResults();
+  showLoading();
+
+  const recipe=[...state.pot];
+  let ideas=null,used='local';
+  const k=localStorage.getItem('ds_key');
+  if(k){
+    try{ideas=await aiGenerate(recipe,k);used='ai';}catch(e){console.warn('AI failed',e);}
+  }
+  if(!ideas)ideas=localGenerate(recipe);
+
+  renderRecipeLine(recipe,used);
+  await renderNotes(ideas);
+
+  state.cooking=false;btn.classList.remove('cooking');refreshCook();
+}
+
+function burst(stage){
+  const n=22;
+  for(let i=0;i<n;i++){
+    const s=document.createElement('div');
+    const sz=rnd(5,12);
+    s.style.cssText=`position:absolute;top:50%;left:50%;width:${sz}px;height:${sz}px;border-radius:50%;
+      background:${pick(['#2E4BFF','#8aa0ff','#16a37f','#e8663a','#ffd34d','#fff'])};
+      z-index:50;pointer-events:none;box-shadow:0 0 8px rgba(46,75,255,.6)`;
+    stage.appendChild(s);
+    const a=rnd(0,6.28),d=rnd(120,320);
+    s.animate([
+      {transform:'translate(-50%,-50%) scale(1)',opacity:1},
+      {transform:`translate(${Math.cos(a)*d-50}%,${Math.sin(a)*d-50}%) scale(0)`,opacity:0}
+    ],{duration:rnd(700,1200),easing:'cubic-bezier(.2,.7,.3,1)'}).onfinish=()=>s.remove();
+  }
+}
+
+/* ---------- results overlay ---------- */
+function openResults(){$('#results').classList.add('show');}
+function closeResults(){$('#results').classList.remove('show');}
+function showLoading(){
+  $('#noteGrid').innerHTML=`<div class="loading">
+    <div class="orbit"><i></i><i></i><i></i></div>
+    <div class="lt">正在熔炉里炖这一锅……<br>把太空的物理规则和地球的好点子揉成新物种</div></div>`;
+  $('#recipeLine').innerHTML='';
+}
+
+function ingrChip(p){
+  const cls={space:'s-sig',earth:'s-ert',scene:'s-scn',challenge:'s-chl'}[p.kind];
+  const mk={space:'✦',earth:'◆',scene:'场景',challenge:'挑战'}[p.kind];
+  return `<span class="ingr ${cls}">${mk} ${esc(p.item.name)}</span>`;
+}
+function renderRecipeLine(recipe,used){
+  const tag=used==='ai'?'<b style="color:var(--blue)">DeepSeek 现炖</b>':'<b>灵感引擎现炖</b>';
+  $('#recipeLine').innerHTML=`本次配方 · ${tag} &nbsp; ${recipe.map(ingrChip).join('')} <span style="color:var(--mute)">→ 太空旅馆新物种</span>`;
+}
+
+async function renderNotes(ideas){
+  const grid=$('#noteGrid');grid.innerHTML='';
+  ideas.forEach((idea,i)=>{
+    const note=document.createElement('div');note.className='note';
+    const tags=(idea.tags||[]).slice(0,4).map(t=>`<span>${esc(t)}</span>`).join('');
+    const moment=idea.moment?`<div class="moment"><span class="ml">接住的关键时刻</span>${esc(idea.moment)}</div>`:'';
+    note.innerHTML=`<span class="num">IDEA ${String(i+1).padStart(2,'0')}</span>
+      <span class="remix" title="把它丢回锅里再炖">↻</span>
+      <h3>${esc(idea.title)}</h3>
+      <div class="value">${idea.value||''}</div>
+      ${moment}
+      <div class="tags">${tags}</div>`;
+    note.querySelector('.remix').onclick=()=>remix(idea);
+    grid.appendChild(note);
+    // popcorn pop-in
+    setTimeout(()=>{
+      note.style.opacity='0';
+      note.animate([
+        {transform:'translateY(26px) scale(.9) rotate('+rnd(-3,3)+'deg)',opacity:0},
+        {transform:'translateY(-6px) scale(1.02)',opacity:1,offset:.7},
+        {transform:'translateY(0) scale(1) rotate(0)',opacity:1}
+      ],{duration:560,easing:'cubic-bezier(.34,1.56,.64,1)',fill:'forwards'});
+    },i*130);
+  });
+}
+
+/* remix: drop this idea back into the pot as a new 'inspiration' seed */
+function remix(idea){
+  closeResults();
+  // keep current pot, just re-cook for a fresh batch, seeded by the idea title
+  state._seed=idea.title;
+  setTimeout(()=>cook(),380);
+}
+
+/* ---------- AI generation (DeepSeek) ---------- */
+function recipeText(recipe){
+  const g=k=>recipe.filter(p=>p.kind===k).map(p=>p.item);
+  const sig=g('space'),ert=g('earth'),sc=g('scene'),ch=g('challenge');
+  let t='【太空信号】'+sig.map(s=>`${s.name}（${s.desc||s.tag||''}）`).join('；')+'\n';
+  t+='【地球同款】'+ert.map(s=>`${s.name}（${s.desc||s.tag||''}）`).join('；')+'\n';
+  if(sc.length)t+='【场景】'+sc.map(s=>`${s.name}：${s.who||''}在「${s.moment||''}」`).join('；')+'\n';
+  if(ch.length)t+='【挑战】'+ch.map(s=>`${s.name}：${s.block||''}`).join('；')+'\n';
+  return t;
+}
+async function aiGenerate(recipe,apiKey){
+  const sys=`你是太空旅馆的产品脑暴师。用户给你几样"食材"：太空真实技术/物理规则、地球已有好产品、太空旅客的真实场景与硬约束。请把它们融合，设计出"只有太空旅馆才需要、才能成立"的新产品/服务/系统。要求：具体、可成立、有画面、有商业感，不要空话。`;
+  const seed=state._seed?`\n（在上一轮「${state._seed}」的基础上，换个角度再想，不要重复。）`:'';
+  const usr=`食材如下：\n${recipeText(recipe)}${seed}
+请输出 4 个点子。严格返回 JSON 数组，每个元素字段：
+"title"：产品名（4-10字，有记忆点）
+"value"：一句话价值主张，必须是"为〔谁〕在〔什么时刻〕，通过〔怎么做〕，带来〔什么改变〕"的句式，把关键词用 <b></b> 包住（2-3 处）
+"moment"：这个产品精准接住了旅客的哪个具体时刻/情绪（一句话）
+"tags"：3-4 个关键词数组
+只返回 JSON，不要任何解释或 markdown 代码块。`;
+  const r=await fetch('https://api.deepseek.com/chat/completions',{
+    method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
+    body:JSON.stringify({model:'deepseek-chat',temperature:1.1,messages:[{role:'system',content:sys},{role:'user',content:usr}]})
+  });
+  if(!r.ok)throw new Error('http '+r.status);
+  const j=await r.json();
+  let txt=j.choices[0].message.content.trim();
+  txt=txt.replace(/^```(json)?/i,'').replace(/```$/,'').trim();
+  const arr=JSON.parse(txt);
+  state._seed=null;
+  return arr.slice(0,4);
+}
+
+/* ---------- local fallback idea engine ---------- */
+function localGenerate(recipe){
+  const g=k=>recipe.filter(p=>p.kind===k).map(p=>p.item);
+  const sig=g('space'),ert=g('earth'),sc=g('scene'),ch=g('challenge');
+  const S=sig[0]||{name:'太空信号',kw:['太空']}, E=ert[0]||{name:'地球产品',kw:['产品']};
+  const SC=sc[0], CH=ch[0];
+  const sk=(S.kw||[])[0]||S.name, ek=(E.kw||[])[0]||E.name;
+  const who=SC?SC.who:'太空旅客', mom=SC?SC.moment:'漂浮在轨道上的日常';
+  const emo=SC?SC.emo:'对失重既新鲜又不安';
+  const block=CH?CH.block:'失重、辐射、补给受限的硬约束';
+  const twist=CH?CH.twist:'把太空的限制变成独一无二的体验';
+
+  const b=t=>`<b>${esc(t)}</b>`;
+  const stems=[
+    {
+      suf:'舱',pre:'悬浮',
+      title:`${S.name.slice(0,3)}${E.name.slice(0,3)}舱`,
+      value:`为${b(who)}，在${b(mom)}的时刻，把${b(E.name)}用${b(S.name)}重做一遍，让${sk}不再是麻烦，而是只有这里才有的享受。`,
+      moment:`接住「${mom}」——${emo}。`,
+      tags:[sk,ek,'失重专属', SC?SC.tag:'体验']
+    },
+    {
+      title:`零重力·${E.name}`,
+      value:`借${b(S.name)}的原理，把地球上的${b(E.name)}改造成${b('失重版')}，专门解决「${block}」带来的别扭。`,
+      moment:CH?`破解「${CH.name}」：${twist}。`:`让旅客第一次觉得"太空版"比地球版更好用。`,
+      tags:[sk, ek, CH?CH.name:'零重力', '新物种']
+    },
+    {
+      title:`${S.name.slice(0,2)}${E.name.slice(0,2)}·订阅服务`,
+      value:`把${b(S.name)}+${b(E.name)}做成${b('按次订阅的旅馆服务')}，旅客入住即可体验，离开可把数据/纪念带回地球。`,
+      moment:`接住「${mom}」，让一次性的震撼变成可反复回味的记忆。`,
+      tags:[sk,ek,'订阅制','可带走']
+    },
+    {
+      title:`${E.name.slice(0,3)}·星空版`,
+      value:`以${b(S.name)}为卖点，重做${b(E.name)}的仪式感，让${b(who)}在${b(mom)}获得"地球上永远给不了"的那一刻。`,
+      moment:SC?`${emo}——正是这款产品要接住的情绪。`:`把科技参数翻译成旅客能感受到的浪漫。`,
+      tags:[sk, ek, SC?SC.tag:'情绪', '卖点']
+    },
+  ];
+  // shuffle lightly so remix feels different
+  return stems.sort(()=>Math.random()-0.5).slice(0,4);
+}
+
+/* ---------- modals & wiring ---------- */
+function openModal(id){$('#'+id).classList.add('show');}
+function closeModal(id){$('#'+id).classList.remove('show');}
+
+function wire(){
+  wireFilters();
+  $('#cookBtn').onclick=cook;
+  $('#diceBtn').onclick=luckyFill;
+  $('#shuffleBtn').onclick=()=>{renderCanvas();/* keep pot intact */ state.pot.forEach(p=>{const t=$(`.tile[data-key="${key(p)}"]`,canvasEl());if(t)t.classList.add('inpot');});};
+  $('#rclose').onclick=closeResults;
+  $('#againBtn').onclick=()=>{closeResults();setTimeout(cook,300);};
+  $('#clearBtn').onclick=()=>{closeResults();clearPot();};
+
+  // key modal
+  $('#keyBtn').onclick=()=>{$('#keyInput').value=localStorage.getItem('ds_key')||'';openModal('keyModal');};
+  $('#keySave').onclick=()=>{const v=$('#keyInput').value.trim();if(v)localStorage.setItem('ds_key',v);else localStorage.removeItem('ds_key');closeModal('keyModal');};
+  $('#keyClear').onclick=()=>{localStorage.removeItem('ds_key');$('#keyInput').value='';};
+  // how modal
+  $('#howBtn').onclick=()=>openModal('howModal');
+  $('#howClose').onclick=()=>closeModal('howModal');
+  $$('.modal').forEach(m=>m.onclick=e=>{if(e.target===m)m.classList.remove('show');});
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape'){$$('.modal.show,.results.show').forEach(x=>x.classList.remove('show'));}
+  });
+
+  // resize: rebuild ring dots + reflow unplaced tiles
+  let rt;window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{buildRingDots();},200);});
+}
+
+function boot(){
+  renderCanvas();
+  buildRingDots();
+  renderCluster();
+  refreshCook();
+  wire();
+  // first-visit auto how
+  if(!localStorage.getItem('sc_seen')){openModal('howModal');localStorage.setItem('sc_seen','1');}
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+
+// expose for e2e tests
+window.__sc={state,addToPot,cook,luckyFill,clearPot,localGenerate,renderCanvas};
