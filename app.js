@@ -206,7 +206,7 @@ function renderCluster(justAdded){
   cl.innerHTML='';
   const n=state.pot.length;
   stage.classList.toggle('has',n>0);
-  const R=n<=1?0:Math.min(66,34+n*6);
+  const R=n<=1?0:Math.min(108,52+n*10);
   state.pot.forEach((p,i)=>{
     const el=document.createElement('div');
     const round=(p.kind==='space'||p.kind==='scene');

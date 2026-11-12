@@ -189,20 +189,21 @@ body{
   border-radius:999px;background:rgba(0,0,0,.18);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.14)}
 .catcher.pan{position:absolute;inset:0;border-radius:50%;display:flex;align-items:center;justify-content:center;
   transition:.35s cubic-bezier(.34,1.56,.64,1);
-  /* metal rim then cream ceramic interior */
+  /* clean cream ceramic interior + subtle dish curvature */
   background:
-    radial-gradient(circle at 50% 50%, #faf7f0 0 60%, rgba(0,0,0,.06) 60.5% 61.5%, transparent 62%),
-    radial-gradient(circle at 50% 42%, #fbf9f3, #efeadf 58%, #e4ddcf 72%),
-    conic-gradient(from 210deg, #cfc8ba, #efe9dd 20%, #c7c0b1 42%, #e8e2d6 64%, #d2cbbc 82%, #cfc8ba);
+    radial-gradient(130px 90px at 38% 30%, rgba(255,255,255,.7), transparent 62%),
+    radial-gradient(circle at 50% 46%, #fdfbf6 0 52%, #f3eee3 74%, #e9e2d4 90%);
   box-shadow:
-    0 34px 70px rgba(40,40,30,.28),
-    inset 0 0 0 7px rgba(255,255,255,.5),
-    inset 0 4px 14px rgba(255,255,255,.7),
-    inset 0 -18px 40px rgba(120,110,90,.22);}
-.pan-sheen{position:absolute;inset:7%;border-radius:50%;pointer-events:none;z-index:9;
-  background:radial-gradient(130px 80px at 36% 30%, rgba(255,255,255,.55), transparent 70%);}
-.catcher.pan.over{transform:scale(1.04);box-shadow:0 40px 80px rgba(40,40,30,.32),inset 0 0 0 7px var(--blue-soft),0 0 0 6px var(--blue-soft),inset 0 -18px 40px rgba(120,110,90,.22)}
-.stage.hot .catcher.pan{box-shadow:0 40px 80px rgba(40,40,30,.3),inset 0 0 0 7px rgba(255,255,255,.5),0 0 54px 6px rgba(46,75,255,.28),inset 0 -18px 40px rgba(120,110,90,.22);animation:breathe .9s ease-in-out infinite}
+    0 34px 70px rgba(40,40,30,.26),
+    0 0 0 2px #d9d2c4,
+    0 0 0 9px #f6f2ea,
+    0 0 0 11px #cdc6b7,
+    inset 0 5px 16px rgba(255,255,255,.75),
+    inset 0 -22px 46px rgba(120,110,90,.16);}
+.pan-sheen{position:absolute;inset:9%;border-radius:50%;pointer-events:none;z-index:9;
+  background:radial-gradient(150px 90px at 34% 26%, rgba(255,255,255,.5), transparent 68%);}
+.catcher.pan.over{transform:scale(1.04);box-shadow:0 40px 80px rgba(40,40,30,.3),0 0 0 2px var(--blue),0 0 0 9px var(--blue-soft),0 0 0 12px var(--blue),inset 0 -22px 46px rgba(120,110,90,.16)}
+.stage.hot .catcher.pan{box-shadow:0 40px 80px rgba(40,40,30,.28),0 0 0 2px #d9d2c4,0 0 0 9px #f6f2ea,0 0 0 11px #cdc6b7,0 0 54px 6px rgba(46,75,255,.26),inset 0 -22px 46px rgba(120,110,90,.16);animation:breathe .9s ease-in-out infinite}
 body[data-theme="cosmos"] .catcher.pan{background:
     radial-gradient(circle at 50% 42%, #1b2648, #121a38 62%, #0d1430 74%),
     conic-gradient(from 210deg,#2a3560,#3b4a86 22%,#263055 44%,#3a4a84 66%,#2a3560);
