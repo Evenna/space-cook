@@ -486,6 +486,20 @@ function localGenerate(recipe){
 function openModal(id){$('#'+id).classList.add('show');}
 function closeModal(id){$('#'+id).classList.remove('show');}
 
+function wireThemes(){
+  const bar=$('#themebar');if(!bar)return;
+  const saved=localStorage.getItem('sc_theme')||'gallery';
+  applyTheme(saved);
+  $$('.tdot',bar).forEach(b=>{
+    b.onclick=()=>applyTheme(b.dataset.theme);
+  });
+}
+function applyTheme(name){
+  document.body.dataset.theme=name;
+  localStorage.setItem('sc_theme',name);
+  $$('#themebar .tdot').forEach(b=>b.classList.toggle('on',b.dataset.theme===name));
+}
+
 function wire(){
   wireFilters();
   $('#cookBtn').onclick=cook;
@@ -512,6 +526,7 @@ function wire(){
 }
 
 function boot(){
+  wireThemes();
   renderCanvas();
   buildRingDots();
   renderCluster();

@@ -26,7 +26,70 @@
   --note-white:#ffffff;
   --shadow:0 6px 22px rgba(30,30,40,.12);
   --shadow-lg:0 22px 60px rgba(20,30,70,.22);
+  --imgfilter:saturate(.92) contrast(1.02);
+  --tilebg:#ded9d0;
+  --glass:rgba(255,255,255,.72);
+  --glassborder:var(--line);
+  --title-font:"Noto Sans SC";
+  --halo:transparent;
+  --dotcolor:var(--line);
 }
+/* ============ THEME: 深空科幻 cosmos ============ */
+body[data-theme="cosmos"]{
+  --bg:#070a16; --bg2:#0b1024; --ink:#f3f5ff; --ink2:#b9c2e6; --mute:#6b74a0;
+  --line:#242c4d; --blue:#5b7cff; --blue-soft:#17203f; --scene:#24d3a5; --chal:#ff7d54;
+  --card:#111736; --note-blue:#14204a; --note-yellow:#2a2340; --note-white:#121832;
+  --shadow:0 6px 26px rgba(0,0,0,.5); --shadow-lg:0 26px 70px rgba(10,20,80,.6);
+  --imgfilter:saturate(.8) brightness(.9) contrast(1.08);
+  --tilebg:#0f1530; --glass:rgba(20,28,60,.55); --glassborder:#2a3360;
+  --halo:0 0 60px rgba(91,124,255,.25); --dotcolor:#2a3566;
+}
+body[data-theme="cosmos"] #app::before{
+  background:radial-gradient(1400px 900px at 50% 40%, #121a3a, transparent 72%),
+             radial-gradient(900px 600px at 15% 85%, rgba(91,124,255,.12), transparent 60%);}
+body[data-theme="cosmos"] #app::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:radial-gradient(1.4px 1.4px at 20% 30%,#fff,transparent),radial-gradient(1.2px 1.2px at 70% 20%,#cdd6ff,transparent),radial-gradient(1.6px 1.6px at 85% 65%,#fff,transparent),radial-gradient(1px 1px at 35% 75%,#aeb8ff,transparent),radial-gradient(1.3px 1.3px at 55% 45%,#fff,transparent),radial-gradient(1px 1px at 10% 60%,#fff,transparent);
+  background-repeat:no-repeat;opacity:.55;animation:twinkle 5s ease-in-out infinite}
+@keyframes twinkle{0%,100%{opacity:.4}50%{opacity:.75}}
+body[data-theme="cosmos"] .tile{backdrop-filter:blur(2px)}
+body[data-theme="cosmos"] .tile.txt[data-kind="scene"]{background:linear-gradient(140deg,#1ec7a0,#0c8f6f)}
+body[data-theme="cosmos"] .catcher{background:radial-gradient(circle at 50% 44%,rgba(91,124,255,.16),rgba(20,28,60,.1) 70%,transparent)}
+body[data-theme="cosmos"] .note::before{box-shadow:0 0 16px var(--blue)}
+body[data-theme="cosmos"] .results.show{background:rgba(7,10,22,.9)}
+
+/* ============ THEME: 编辑杂志 press ============ */
+body[data-theme="press"]{
+  --bg:#f4f1ea; --bg2:#ece7db; --ink:#121212; --ink2:#2e2b26; --mute:#8a857a;
+  --line:#1a1a1a; --blue:#ff3b1f; --blue-soft:#ffe3dc; --scene:#0a7d4f; --chal:#1a1a1a;
+  --card:#fff; --note-blue:#fff3cf; --note-yellow:#121212; --note-white:#fff;
+  --shadow:0 3px 0 rgba(0,0,0,.9); --shadow-lg:6px 6px 0 rgba(0,0,0,.92);
+  --imgfilter:grayscale(.3) contrast(1.12); --tilebg:#ddd7ca;
+  --glass:#fff; --glassborder:#1a1a1a; --halo:transparent; --dotcolor:#1a1a1a;
+  --title-font:"Space Grotesk";
+}
+body[data-theme="press"] #app::before{background:none}
+body[data-theme="press"] .tile{border:2px solid #1a1a1a;box-shadow:4px 4px 0 rgba(0,0,0,.9)}
+body[data-theme="press"] .tile.round,body[data-theme="press"] .pin.round{border-radius:14px}
+body[data-theme="press"] .brand .dot{box-shadow:0 0 0 3px #ffe3dc}
+body[data-theme="press"] .catcher{border-width:3px;border-color:#1a1a1a}
+body[data-theme="press"] .note{border:2.5px solid #1a1a1a}
+body[data-theme="press"] .note:nth-child(4n+3){color:#fff}
+body[data-theme="press"] .note:nth-child(4n+3) .value{color:#e8e5de}
+body[data-theme="press"] .cookbtn{border:2.5px solid #1a1a1a;box-shadow:5px 5px 0 #1a1a1a}
+
+/* theme switcher */
+.themebar{position:fixed;top:50px;right:26px;z-index:32;display:flex;align-items:center;gap:6px;
+  background:var(--glass);backdrop-filter:blur(8px);border:1.5px solid var(--glassborder);border-radius:999px;padding:5px 9px}
+.themebar .tlabel{font-family:"Space Grotesk";font-size:9px;letter-spacing:2px;color:var(--mute);font-weight:600;margin-right:2px}
+.tdot{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--ink2);cursor:pointer;
+  border:none;background:transparent;padding:4px 9px;border-radius:999px;transition:.2s;font-family:inherit}
+.tdot i{width:11px;height:11px;border-radius:50%;display:inline-block}
+.tdot[data-theme="gallery"] i{background:linear-gradient(135deg,#eeece6,#2E4BFF)}
+.tdot[data-theme="cosmos"] i{background:linear-gradient(135deg,#070a16,#5b7cff)}
+.tdot[data-theme="press"] i{background:linear-gradient(135deg,#f4f1ea,#ff3b1f)}
+.tdot:hover{background:var(--blue-soft);color:var(--blue)}
+.tdot.on{background:var(--blue);color:#fff}
+.tdot.on i{box-shadow:0 0 0 2px rgba(255,255,255,.6)}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
 body{
@@ -78,14 +141,14 @@ body{
 /* floating ingredient tiles */
 .tile{
   position:absolute;width:var(--sz,88px);height:var(--sz,88px);border-radius:14px;overflow:hidden;
-  cursor:grab;box-shadow:var(--shadow);background:#ddd9d0;z-index:7;
+  cursor:grab;box-shadow:var(--shadow);background:var(--tilebg);z-index:7;
   will-change:transform;touch-action:none;user-select:none;-webkit-user-drag:none;
   transition:box-shadow .3s, filter .3s;
   animation:floaty var(--dur,7s) ease-in-out infinite;animation-delay:var(--del,0s);
 }
 .tile.round{border-radius:50%}
 @keyframes floaty{0%,100%{transform:translateY(0) rotate(var(--rot,0deg))}50%{transform:translateY(-10px) rotate(calc(var(--rot,0deg) + 1.5deg))}}
-.tile img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;filter:saturate(.97)}
+.tile img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;filter:var(--imgfilter)}
 .tile .tlabel{position:absolute;left:0;right:0;bottom:0;padding:16px 7px 5px;
   background:linear-gradient(transparent,rgba(12,12,16,.82));color:#fff;font-size:9.5px;font-weight:700;
   line-height:1.2;opacity:0;transition:.25s;transform:translateY(3px)}
@@ -114,7 +177,7 @@ body{
   display:flex;align-items:center;justify-content:center;pointer-events:none}
 /* dotted catcher ring (SATTO dots) */
 .ring-dots{position:absolute;inset:-14px;border-radius:50%;z-index:8}
-.ring-dots i{position:absolute;width:7px;height:7px;border-radius:50%;background:var(--line);
+.ring-dots i{position:absolute;width:7px;height:7px;border-radius:50%;background:var(--dotcolor);
   top:50%;left:50%;margin:-3.5px;transition:.4s}
 .stage.hot .ring-dots i{background:var(--blue-soft)}
 .catcher{position:absolute;inset:0;border-radius:50%;border:2px dashed var(--line);
@@ -250,6 +313,13 @@ body{
     <span class="tbtn" id="howBtn">? 玩法</span>
     <span class="tbtn" id="keyBtn">AI 设置</span>
     <span class="tbtn" id="shuffleBtn">↻ 换一批食材</span>
+  </div>
+
+  <div class="themebar" id="themebar">
+    <span class="tlabel">THEME</span>
+    <button class="tdot" data-theme="gallery" title="极简画廊"><i></i>画廊</button>
+    <button class="tdot" data-theme="cosmos" title="深空科幻"><i></i>深空</button>
+    <button class="tdot" data-theme="press" title="编辑杂志"><i></i>杂志</button>
   </div>
 
   <div class="corner c-tl">太空 × 地球<br><b>脑暴厨房 · THE FORGE</b></div>
