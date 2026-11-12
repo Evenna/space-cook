@@ -166,24 +166,25 @@ a{color:inherit}
 .results-head h2{font-size:26px;font-weight:900}
 .combo{font-size:13px;color:var(--mute);margin:2px 0 26px;font-weight:500}
 .combo b{color:var(--ink)}
-.notes{display:flex;flex-wrap:wrap;gap:22px;align-items:flex-start}
+.notes{display:grid;grid-template-columns:repeat(4,1fr);gap:22px;align-items:stretch}
+@media(max-width:1180px){.notes{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:620px){.notes{grid-template-columns:1fr}}
 .note{
-  width:270px;padding:26px 24px 28px;border-radius:6px;position:relative;
-  box-shadow:var(--shadow-lg);opacity:0;
-  background:var(--note-white);
+  padding:26px 24px 28px;border-radius:10px;position:relative;
+  box-shadow:var(--shadow-lg);opacity:0;background:var(--note-white);
+  display:flex;flex-direction:column;overflow:hidden;
 }
-.note:nth-child(3n+1){background:var(--note-blue);transform:rotate(-1.5deg)}
-.note:nth-child(3n+2){background:var(--note-white);transform:rotate(.8deg);width:300px}
-.note:nth-child(3n+3){background:var(--note-yellow);transform:rotate(1.6deg)}
+.note:nth-child(4n+1){background:var(--note-blue)}
+.note:nth-child(4n+2){background:var(--note-white)}
+.note:nth-child(4n+3){background:var(--note-yellow)}
+.note:nth-child(4n+4){background:var(--note-white)}
 .note::before{content:"";position:absolute;left:0;top:18px;bottom:18px;width:5px;border-radius:3px;background:var(--blue)}
-.note .num{font-family:"Space Grotesk";font-size:10px;letter-spacing:2px;color:var(--blue);font-weight:700;margin-bottom:10px}
-.note h3{font-size:clamp(22px,2.4vw,30px);font-weight:900;line-height:1.15;letter-spacing:-.5px;margin-bottom:12px}
-.note p{font-size:14px;line-height:1.75;color:var(--ink2)}
-.note .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px}
+.note .num{font-family:"Space Grotesk";font-size:10px;letter-spacing:2px;color:var(--blue);font-weight:700;margin-bottom:12px}
+.note h3{font-size:clamp(21px,1.6vw,26px);font-weight:900;line-height:1.2;letter-spacing:-.5px;margin-bottom:12px}
+.note p{font-size:13.5px;line-height:1.75;color:var(--ink2);flex:1}
+.note .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:18px}
 .note .tags span{font-size:11px;font-weight:700;color:var(--blue);background:rgba(46,75,255,.1);
   padding:3px 10px;border-radius:999px}
-.note.big{width:320px}
-.note.big h3{font-size:clamp(26px,3vw,38px)}
 
 .loading{display:flex;flex-direction:column;align-items:center;gap:18px;width:100%;padding:40px 0;color:var(--mute)}
 .orbit{position:relative;width:54px;height:54px}

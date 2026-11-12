@@ -273,7 +273,7 @@ function showLoader(){
 function renderNotes(ideas){
   noteGrid.innerHTML='';
   ideas.forEach((idea,i)=>{
-    const el=document.createElement('div');el.className='note'+(i===1?' big':'');
+    const el=document.createElement('div');el.className='note';
     el.innerHTML=`<div class="num">IDEA ${String(i+1).padStart(2,'0')}</div>
       <h3>${esc(idea.title)}</h3><p>${esc(idea.desc)}</p>
       <div class="tags">${(idea.tags||[]).map(t=>`<span>${esc(t)}</span>`).join('')}</div>`;
