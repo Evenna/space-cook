@@ -2,12 +2,12 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>灵感碰撞 · 太空 × 地球 脑暴厨房</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%232E4BFF'/%3E%3Ctext x='50' y='70' font-size='56' text-anchor='middle' fill='white'%3E%E2%9C%A6%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#eeece6;            /* 浅灰留白 gallery paper */
@@ -34,228 +34,6 @@
   --halo:transparent;
   --dotcolor:var(--line);
 }
-/* ============ THEME: 深空科幻 cosmos ============ */
-body[data-theme="cosmos"]{
-  --bg:#070a16; --bg2:#0b1024; --ink:#f3f5ff; --ink2:#b9c2e6; --mute:#6b74a0;
-  --line:#242c4d; --blue:#5b7cff; --blue-soft:#17203f; --scene:#24d3a5; --chal:#ff7d54;
-  --card:#111736; --note-blue:#14204a; --note-yellow:#2a2340; --note-white:#121832;
-  --shadow:0 6px 26px rgba(0,0,0,.5); --shadow-lg:0 26px 70px rgba(10,20,80,.6);
-  --imgfilter:saturate(.8) brightness(.9) contrast(1.08);
-  --tilebg:#0f1530; --glass:rgba(20,28,60,.55); --glassborder:#2a3360;
-  --halo:0 0 60px rgba(91,124,255,.25); --dotcolor:#2a3566;
-}
-body[data-theme="cosmos"] #app::before{
-  background:radial-gradient(1400px 900px at 50% 40%, #121a3a, transparent 72%),
-             radial-gradient(900px 600px at 15% 85%, rgba(91,124,255,.12), transparent 60%);}
-body[data-theme="cosmos"] #app::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
-  background-image:radial-gradient(1.4px 1.4px at 20% 30%,#fff,transparent),radial-gradient(1.2px 1.2px at 70% 20%,#cdd6ff,transparent),radial-gradient(1.6px 1.6px at 85% 65%,#fff,transparent),radial-gradient(1px 1px at 35% 75%,#aeb8ff,transparent),radial-gradient(1.3px 1.3px at 55% 45%,#fff,transparent),radial-gradient(1px 1px at 10% 60%,#fff,transparent);
-  background-repeat:no-repeat;opacity:.55;animation:twinkle 5s ease-in-out infinite}
-@keyframes twinkle{0%,100%{opacity:.4}50%{opacity:.75}}
-body[data-theme="cosmos"] .tile{backdrop-filter:blur(2px)}
-body[data-theme="cosmos"] .tile.txt[data-kind="scene"]{background:linear-gradient(140deg,#1ec7a0,#0c8f6f)}
-body[data-theme="cosmos"] .catcher{background:radial-gradient(circle at 50% 44%,rgba(91,124,255,.16),rgba(20,28,60,.1) 70%,transparent)}
-body[data-theme="cosmos"] .note::before{box-shadow:0 0 16px var(--blue)}
-body[data-theme="cosmos"] .results.show{background:rgba(7,10,22,.9)}
-
-/* ============ THEME: 编辑杂志 press ============ */
-body[data-theme="press"]{
-  --bg:#f4f1ea; --bg2:#ece7db; --ink:#121212; --ink2:#2e2b26; --mute:#8a857a;
-  --line:#1a1a1a; --blue:#ff3b1f; --blue-soft:#ffe3dc; --scene:#0a7d4f; --chal:#1a1a1a;
-  --card:#fff; --note-blue:#fff3cf; --note-yellow:#121212; --note-white:#fff;
-  --shadow:0 3px 0 rgba(0,0,0,.9); --shadow-lg:6px 6px 0 rgba(0,0,0,.92);
-  --imgfilter:grayscale(.3) contrast(1.12); --tilebg:#ddd7ca;
-  --glass:#fff; --glassborder:#1a1a1a; --halo:transparent; --dotcolor:#1a1a1a;
-  --title-font:"Space Grotesk";
-}
-body[data-theme="press"] #app::before{background:none}
-body[data-theme="press"] .tile{border:2px solid #1a1a1a;box-shadow:4px 4px 0 rgba(0,0,0,.9)}
-body[data-theme="press"] .tile.round,body[data-theme="press"] .pin.round{border-radius:14px}
-body[data-theme="press"] .brand .dot{box-shadow:0 0 0 3px #ffe3dc}
-body[data-theme="press"] .catcher{border-width:3px;border-color:#1a1a1a}
-body[data-theme="press"] .note{border:2.5px solid #1a1a1a}
-body[data-theme="press"] .note:nth-child(4n+3){color:#fff}
-body[data-theme="press"] .note:nth-child(4n+3) .value{color:#e8e5de}
-body[data-theme="press"] .cookbtn{border:2.5px solid #1a1a1a;box-shadow:5px 5px 0 #1a1a1a}
-
-/* theme switcher */
-.themebar{display:inline-flex;align-items:center;gap:7px;margin-left:2px}
-.tdot{display:inline-flex;cursor:pointer;border:none;background:transparent;padding:0;transition:.2s;font-family:inherit}
-.tdot i{width:12px;height:12px;border-radius:50%;display:inline-block;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
-.tdot[data-theme="gallery"] i{background:linear-gradient(135deg,#eeece6,#2E4BFF)}
-.tdot[data-theme="cosmos"] i{background:linear-gradient(135deg,#070a16,#5b7cff)}
-.tdot[data-theme="press"] i{background:linear-gradient(135deg,#f4f1ea,#ff3b1f)}
-.tdot:hover{transform:scale(1.2)}
-.tdot.on i{box-shadow:0 0 0 2px var(--blue)}
-*{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%}
-body{
-  font-family:"Noto Sans SC",system-ui,sans-serif;background:var(--bg);color:var(--ink);
-  overflow:hidden;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
-}
-#app{position:fixed;inset:0;overflow:hidden}
-#app::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
-  background:radial-gradient(1400px 900px at 50% 42%, #f6f4ee, transparent 70%);}
-
-/* corner labels (SATTO style) */
-.corner{position:fixed;z-index:30;font-family:"Space Grotesk";font-size:11px;letter-spacing:1.2px;
-  color:var(--ink2);line-height:1.6;pointer-events:none;font-weight:600}
-.corner .ci{color:var(--blue);margin-right:5px}
-.corner .cs{color:var(--mute);font-size:9.5px;letter-spacing:2px;text-transform:uppercase}
-.c-tl{top:64px;left:28px}
-.c-tr{top:64px;right:28px;text-align:right}
-/* top bar: brand left + nav, with a hairline divider */
-.topbar{position:fixed;top:0;left:0;right:0;z-index:31;display:flex;align-items:center;justify-content:space-between;
-  padding:16px 28px 13px;border-bottom:1px solid var(--line);background:linear-gradient(var(--bg),color-mix(in srgb,var(--bg) 70%,transparent));}
-.brand{font-weight:900;font-size:18px;letter-spacing:3px;display:flex;align-items:center;gap:10px;color:var(--ink)}
-.brand .dot{width:5px;height:20px;border-radius:2px;background:var(--blue);box-shadow:none}
-
-/* top controls — now inline in .topbar */
-.controls{display:flex;align-items:center;gap:10px}
-.controls .sep{color:var(--mute);font-size:11px;opacity:.6}
-.tbtn{font-size:12px;font-weight:700;color:var(--ink2);cursor:pointer;transition:.2s;user-select:none;pointer-events:auto}
-.tbtn:hover{color:var(--blue)}
-
-/* side filters (floating pills) */
-.sidefx{position:fixed;z-index:31;display:flex;flex-direction:column;gap:7px;pointer-events:auto}
-.sidefx.left{left:26px;top:50%;transform:translateY(-50%)}
-.sidefx.right{right:26px;top:50%;transform:translateY(-50%);align-items:flex-end}
-.fxpill{font-size:11px;font-weight:700;padding:6px 13px;border-radius:999px;border:1px solid var(--line);
-  background:transparent;cursor:pointer;transition:.2s;color:var(--mute);user-select:none;white-space:nowrap}
-.fxpill:hover{border-color:var(--blue);color:var(--blue)}
-.fxpill.on{color:var(--ink);border-color:var(--ink2)}
-.fxpill[data-kind="space"].on,.fxpill[data-kind="earth"].on,.fxpill[data-kind="scene"].on,.fxpill[data-kind="challenge"].on{background:transparent}
-.fxlabel{font-family:"Space Grotesk";font-size:9px;letter-spacing:2px;color:var(--mute);text-transform:uppercase;margin-bottom:2px;font-weight:600}
-
-/* ---------- canvas ---------- */
-#canvas{position:absolute;inset:0;z-index:5}
-#wires{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:6}
-#wires path{fill:none;stroke-linecap:round}
-#wires #arcPath{opacity:.92;stroke-width:2.4}
-#wires circle{fill:var(--blue)}
-
-/* floating ingredient tiles */
-.tile{
-  position:absolute;width:var(--sz,88px);height:var(--sz,88px);border-radius:14px;overflow:hidden;
-  cursor:grab;box-shadow:var(--shadow);background:var(--tilebg);z-index:7;
-  will-change:transform;touch-action:none;user-select:none;-webkit-user-drag:none;
-  transition:box-shadow .3s, filter .3s;
-  animation:floaty var(--dur,7s) ease-in-out infinite;animation-delay:var(--del,0s);
-}
-.tile.round{border-radius:50%}
-@keyframes floaty{0%,100%{transform:translateY(0) rotate(var(--rot,0deg))}50%{transform:translateY(-10px) rotate(calc(var(--rot,0deg) + 1.5deg))}}
-.tile img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;filter:var(--imgfilter)}
-.tile .tlabel{position:absolute;left:0;right:0;bottom:0;padding:16px 7px 5px;
-  background:linear-gradient(transparent,rgba(12,12,16,.82));color:#fff;font-size:9.5px;font-weight:700;
-  line-height:1.2;opacity:0;transition:.25s;transform:translateY(3px)}
-.tile:hover{box-shadow:var(--shadow-lg);z-index:12;animation-play-state:paused}
-.tile:hover .tlabel{opacity:1;transform:translateY(0)}
-.tile .kind{position:absolute;top:5px;left:5px;width:8px;height:8px;border-radius:50%;z-index:3;box-shadow:0 0 0 2px rgba(255,255,255,.7)}
-.tile[data-kind="space"] .kind{background:var(--blue)}
-.tile[data-kind="earth"] .kind{background:var(--ink)}
-.tile[data-kind="scene"] .kind{background:var(--scene)}
-.tile[data-kind="challenge"] .kind{background:var(--chal)}
-.tile.dragging{animation:none;cursor:grabbing;box-shadow:var(--shadow-lg);z-index:40}
-.tile.inpot{display:none}
-.tile.hidden{opacity:0;pointer-events:none;transform:scale(.6);transition:opacity .4s,transform .4s}
-
-/* chip-style tiles for scene/challenge (text, not photo) */
-.tile.txt{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
-  padding:8px;color:#fff;font-weight:700}
-.tile.txt[data-kind="scene"]{background:linear-gradient(140deg,#1bbf94,#0f7d61)}
-.tile.txt[data-kind="challenge"]{background:linear-gradient(140deg,#f0774c,#cf4f27)}
-.tile.txt .tt{font-size:11px;line-height:1.25}
-.tile.txt .ts{font-family:"Space Grotesk";font-size:7.5px;letter-spacing:1px;opacity:.85;margin-top:3px;text-transform:uppercase}
-
-/* ---------- center stage (the forge) ---------- */
-.stage{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:8;
-  width:min(46vmin,340px);height:min(46vmin,340px);border-radius:50%;
-  display:flex;align-items:center;justify-content:center;pointer-events:none}
-/* dotted catcher ring (SATTO dots) — hidden when pan skin is on */
-.ring-dots{position:absolute;inset:-14px;border-radius:50%;z-index:8;opacity:0}
-.ring-dots i{position:absolute;width:7px;height:7px;border-radius:50%;background:var(--dotcolor);
-  top:50%;left:50%;margin:-3.5px;transition:.4s}
-.stage.hot .ring-dots i{background:var(--blue-soft)}
-/* ===== realistic frying pan ===== */
-.pan-handle{position:absolute;z-index:7;width:30px;height:min(30vmin,220px);border-radius:16px;
-  left:12%;bottom:-16%;transform:rotate(38deg);transform-origin:top center;
-  background:linear-gradient(90deg,#1a39d6,var(--blue) 42%,#5b78ff 60%,#243fd1);
-  box-shadow:inset 0 0 0 1px rgba(255,255,255,.18), 0 10px 26px rgba(30,40,110,.3);}
-.pan-handle::after{content:"";position:absolute;left:50%;top:46%;width:13px;height:34px;margin-left:-6.5px;
-  border-radius:999px;background:rgba(0,0,0,.18);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.14)}
-.catcher.pan{position:absolute;inset:0;border-radius:50%;display:flex;align-items:center;justify-content:center;
-  transition:.35s cubic-bezier(.34,1.56,.64,1);
-  /* clean cream ceramic dish: single raised rim + inner bowl shadow */
-  background:
-    radial-gradient(150px 100px at 38% 28%, rgba(255,255,255,.72), transparent 60%),
-    radial-gradient(circle at 50% 50%, #fcf9f3 0 58%, #efe8da 80%, #e4dccb 100%);
-  box-shadow:
-    0 38px 70px rgba(60,52,38,.30),
-    0 0 0 6px #efe8da,
-    0 0 0 8px #d8cfbb,
-    inset 0 7px 20px rgba(255,255,255,.85),
-    inset 0 -30px 56px rgba(120,106,78,.22);}
-.pan-sheen{position:absolute;inset:9%;border-radius:50%;pointer-events:none;z-index:9;
-  background:radial-gradient(160px 94px at 34% 24%, rgba(255,255,255,.55), transparent 66%);}
-.catcher.pan.over{transform:scale(1.04);box-shadow:0 42px 80px rgba(60,52,38,.34),0 0 0 6px var(--blue-soft),0 0 0 8px var(--blue),inset 0 -30px 56px rgba(120,106,78,.22)}
-.stage.hot .catcher.pan{box-shadow:0 40px 80px rgba(40,40,30,.28),0 0 0 2px #d9d2c4,0 0 0 9px #f6f2ea,0 0 0 11px #cdc6b7,0 0 54px 6px rgba(46,75,255,.26),inset 0 -22px 46px rgba(120,110,90,.16);animation:breathe .9s ease-in-out infinite}
-body[data-theme="cosmos"] .catcher.pan{background:
-    radial-gradient(circle at 50% 42%, #1b2648, #121a38 62%, #0d1430 74%),
-    conic-gradient(from 210deg,#2a3560,#3b4a86 22%,#263055 44%,#3a4a84 66%,#2a3560);
-  box-shadow:0 34px 70px rgba(0,0,0,.55),inset 0 0 0 7px rgba(91,124,255,.25),inset 0 -18px 40px rgba(0,0,0,.4),0 0 60px rgba(91,124,255,.2)}
-body[data-theme="cosmos"] .pan-handle{background:linear-gradient(90deg,#3350e6,#5b7cff 50%,#8aa0ff)}
-body[data-theme="press"] .catcher.pan{background:#fff;border:3px solid #1a1a1a;box-shadow:8px 8px 0 #1a1a1a,inset 0 0 0 6px #fff}
-body[data-theme="press"] .pan-handle{background:#ff3b1f;border:2.5px solid #1a1a1a;box-shadow:4px 4px 0 #1a1a1a}
-@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
-
-.emptyhint{position:absolute;text-align:center;color:var(--mute);pointer-events:none;transition:.3s}
-.emptyhint .big{font-size:15px;font-weight:700;color:var(--ink2);margin-bottom:5px}
-.emptyhint .sm{font-size:11.5px;line-height:1.6}
-.stage.has .emptyhint{opacity:0}
-
-/* stacked ingredients inside pot (orbit cluster) */
-.cluster{position:absolute;inset:0;pointer-events:none}
-.pin{position:absolute;top:50%;left:50%;width:72px;height:72px;margin:-36px;border-radius:12px;overflow:hidden;
-  box-shadow:var(--shadow-lg);transition:transform .5s cubic-bezier(.34,1.56,.64,1), opacity .4s;
-  border:2px solid #fff;background:#ddd;pointer-events:auto;cursor:pointer}
-.pin.round{border-radius:50%}
-.pin img{width:100%;height:100%;object-fit:cover}
-.pin.txt{display:flex;align-items:center;justify-content:center;text-align:center;padding:6px;color:#fff;font-size:10px;font-weight:700;line-height:1.2}
-.pin.txt[data-kind="scene"]{background:linear-gradient(140deg,#1bbf94,#0f7d61)}
-.pin.txt[data-kind="challenge"]{background:linear-gradient(140deg,#f0774c,#cf4f27)}
-.pin .pinx{position:absolute;top:2px;right:2px;width:17px;height:17px;border-radius:50%;background:rgba(255,255,255,.92);
-  color:#333;font-size:10px;display:none;align-items:center;justify-content:center;line-height:1;z-index:3}
-.pin:hover .pinx{display:flex}
-.pin .ek{position:absolute;bottom:2px;left:2px;width:8px;height:8px;border-radius:50%;box-shadow:0 0 0 1.5px #fff}
-.pin[data-kind="space"] .ek{background:var(--blue)}
-.pin[data-kind="earth"] .ek{background:var(--ink)}
-
-.cookdock{position:absolute;top:calc(50% + min(26vmin,195px));left:50%;transform:translateX(-50%);z-index:20;
-  display:flex;flex-direction:column;align-items:center;gap:9px;pointer-events:auto}
-.cookbtn{display:inline-flex;align-items:baseline;gap:8px;padding:4px 6px;border:none;background:none;cursor:pointer;
-  color:var(--ink);font-size:clamp(34px,5vw,54px);font-weight:500;letter-spacing:-1px;
-  font-family:Georgia,"Times New Roman","Noto Serif SC",serif;transition:.25s;position:relative;line-height:1}
-.cookbtn .arr{font-size:.72em;font-weight:400;transition:transform .25s;display:inline-block}
-.cookbtn:hover:not(:disabled) .arr{transform:translate(4px,-4px)}
-.cookbtn:hover:not(:disabled){color:var(--blue)}
-.cookbtn:disabled{color:var(--mute);opacity:.55;cursor:not-allowed}
-.cookbtn.cooking{pointer-events:none;color:var(--blue)}
-.cookbtn.cooking .arr{animation:spin .8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.cookhint{font-size:13px;color:var(--mute);font-weight:500;text-align:center;max-width:320px;line-height:1.5;margin-top:2px}
-.cookhint b{color:var(--blue);font-weight:800;font-size:15px;font-family:"Space Grotesk";margin:0 2px}
-.dice{display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none;font-size:11.5px;font-weight:700;
-  color:var(--blue);padding:6px 14px;border-radius:999px;border:1.5px dashed var(--blue);background:var(--blue-soft);transition:.2s}
-.dice:hover{transform:scale(1.04)}
-.dice:active .d{animation:roll .5s ease}
-@keyframes roll{to{transform:rotate(360deg)}}
-
-/* drag ghost */
-#ghost{position:fixed;left:0;top:0;z-index:60;width:88px;height:88px;border-radius:14px;overflow:hidden;
-  pointer-events:none;opacity:0;box-shadow:var(--shadow-lg);outline:3px solid var(--blue)}
-#ghost img{width:100%;height:100%;object-fit:cover}
-#ghost.txt{display:flex;align-items:center;justify-content:center;text-align:center;padding:8px;color:#fff;font-size:11px;font-weight:700}
-#ghost.on{opacity:1}
-
 /* ---------- results overlay ---------- */
 .results{position:fixed;inset:0;z-index:70;background:rgba(238,236,230,.0);backdrop-filter:blur(0px);
   display:none;align-items:flex-start;justify-content:center;overflow:auto;padding:70px 26px 40px;transition:background .4s,backdrop-filter .4s}
@@ -326,62 +104,54 @@ body[data-theme="press"] .pan-handle{background:#ff3b1f;border:2.5px solid #1a1a
 .tagc{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:700}
 .tagc.sig{background:var(--blue-soft);color:var(--blue)}.tagc.scn{background:#dff3ec;color:var(--scene)}.tagc.chl{background:#fdebe3;color:var(--chal)}
 </style>
+<link rel="stylesheet" href="forge.css?v=1">
 </head>
 <body>
 <div id="app">
-  <div class="topbar">
-    <div class="brand"><span class="dot"></span>灵感碰撞</div>
-    <div class="controls">
-      <span class="tbtn" id="howBtn">玩法</span>
-      <span class="sep">·</span>
-      <span class="tbtn" id="keyBtn">AI 设置</span>
-      <span class="sep">·</span>
-      <span class="tbtn" id="shuffleBtn">换一批</span>
-      <span class="sep">·</span>
-      <span class="themebar" id="themebar">
-        <button class="tdot" data-theme="gallery" title="极简画廊"><i></i></button>
-        <button class="tdot" data-theme="cosmos" title="深空科幻"><i></i></button>
-        <button class="tdot" data-theme="press" title="编辑杂志"><i></i></button>
-      </span>
-    </div>
+  <header class="topbar">
+    <h1 class="brand">灵感碰撞</h1>
+    <div class="header-rule" aria-hidden="true"></div>
+    <nav class="controls" aria-label="页面操作">
+      <button class="tbtn" id="howBtn">玩法</button><span aria-hidden="true">·</span>
+      <button class="tbtn" id="keyBtn">AI 设置</button><span aria-hidden="true">·</span>
+      <button class="tbtn" id="shuffleBtn">换一批</button>
+    </nav>
+  </header>
+
+  <div class="sidefx left" aria-label="太空素材筛选">
+    <button class="fxpill on" data-kind="space" aria-pressed="true"><i aria-hidden="true">◎</i>太空信号</button>
+    <button class="fxpill on" data-kind="scene" aria-pressed="true"><i aria-hidden="true">◇</i>场景</button>
+  </div>
+  <div class="sidefx right" aria-label="地球素材筛选">
+    <button class="fxpill on" data-kind="earth" aria-pressed="true"><i aria-hidden="true">⊕</i>地球同款</button>
+    <button class="fxpill on" data-kind="challenge" aria-pressed="true"><i aria-hidden="true">△</i>挑战</button>
   </div>
 
-  <div class="corner c-tl"><span class="ci">✦</span>太空信号<br><span class="cs">场景</span></div>
-  <div class="corner c-tr"><span class="ci">◆</span>地球同款<br><span class="cs">挑战</span></div>
+  <div id="canvas" aria-label="素材画布"></div>
 
-  <!-- side filters -->
-  <div class="sidefx left">
-    <div class="fxlabel">筛选</div>
-    <span class="fxpill on" data-kind="space">✦ 太空信号</span>
-    <span class="fxpill on" data-kind="scene">场景</span>
-  </div>
-  <div class="sidefx right">
-    <div class="fxlabel">FILTER</div>
-    <span class="fxpill on" data-kind="earth">◆ 地球同款</span>
-    <span class="fxpill on" data-kind="challenge">挑战</span>
-  </div>
-
-  <div id="canvas"></div>
-  <svg id="wires"></svg>
-
-  <!-- center stage: the frying pan -->
-  <div class="stage" id="stage">
-    <div class="pan-handle"></div>
-    <div class="ring-dots" id="ringDots"></div>
+  <div class="stage" id="stage" aria-label="线索合成锅">
+    <div class="pan-handle" aria-hidden="true"></div>
     <div class="catcher pan" id="catcher">
-      <div class="pan-sheen"></div>
+      <svg class="pan-outline" viewBox="0 0 480 480" aria-hidden="true">
+        <path d="M240 5C309 5 360 32 400 69L431 81Q442 85 439 97L439 118C462 154 475 196 475 240A235 235 0 1 1 240 5Z"/>
+      </svg>
       <div class="emptyhint" id="emptyHint">
-        <div class="big">把食材拖进锅里</div>
-        <div class="sm">至少 1 个太空信号 + 1 个地球同款<br>场景/挑战让脑暴更精准</div>
+        <div class="big">把线索拖进锅里</div>
+        <div class="sm">各选至少一条太空信号和地球同款</div>
       </div>
+      <svg class="stir-traces" viewBox="0 0 480 480" aria-hidden="true">
+        <path d="M149 81C93 98 63 140 59 188M181 433c100 32 182-9 210-78"/>
+        <path class="arrow-tip" d="m51 179 8 17 9-17-9 5zm332 180 12-13 1 19-5-7z"/>
+        <circle cx="117" cy="160" r="5.5"/><circle cx="366" cy="150" r="5.5"/><circle cx="237" cy="398" r="5.5"/>
+      </svg>
       <div class="cluster" id="cluster"></div>
     </div>
   </div>
 
   <div class="cookdock">
-    <button class="cookbtn" id="cookBtn" disabled>Cooking<span class="arr">↗</span></button>
-    <div class="cookhint" id="cookHint">已选 <b id="potCount">0</b> 条线索</div>
-    <span class="dice" id="diceBtn"><span class="d">🎲</span>手气模式</span>
+    <button class="cookbtn" id="cookBtn" disabled>Cooking <span class="arr" aria-hidden="true">↗</span></button>
+    <div class="cookhint" id="cookHint" aria-live="polite">已选 0 条线索</div>
+    <button class="dice" id="diceBtn">手气模式</button>
   </div>
 
   <div id="ghost"><img alt=""></div>
@@ -422,9 +192,9 @@ body[data-theme="press"] .pan-handle{background:#ff3b1f;border:2.5px solid #1a1a
   <div class="row" style="margin-top:18px"><button class="primary" id="howClose">开始下厨</button></div>
 </div></div>
 
-<script src="data.js"></script>
+<script src="data.js?v=20261117"></script>
 <script src="spice.js"></script>
 <script src="photos.js"></script>
-<script src="app.js"></script>
+<script src="app.js?v=20261117"></script>
 </body>
 </html>

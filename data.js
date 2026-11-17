@@ -71,3 +71,11 @@ const EARTH_PRODUCTS = [
   { id:'HT-29', name:'智能温控纺织', tag:'可穿戴', desc:'宇航服主动温控纤维做成自动调温的智能服装。', kw:['调温','智能','纺织'], img:'textile,fabric,wool' },
   { id:'HT-30', name:'空气质量监测仪', tag:'健康', desc:'舱内气体监测技术做成家用空气质量传感器。', kw:['空气','监测','健康'], img:'device,gadget,desk' },
 ];
+
+// Visual clues featured in the reference layout.
+SPACE_SIGNALS.push({id:'IE-31',name:'月面舷窗',tag:'栖居',desc:'透过月面栖居舱的舷窗观察地球及月面地形。',kw:['舷窗','地球','远望']});
+EARTH_PRODUCTS.push({id:'HT-31',name:'盘式录音机',tag:'声音',desc:'用磁带记录日常声响并在不同时间播放。',kw:['录音','声音','异步']});
+EARTH_PRODUCTS.push(
+  {id:'HT-32',name:'厚壁陶瓷杯',tag:'日常',desc:'厚杯壁与握持温度成为喝咖啡时熟悉的触觉线索。',kw:['触感','温度','仪式']},
+  {id:'HT-33',name:'纸面速写本',tag:'记录',desc:'用纸笔记录草图与日常观察，方便随手翻阅和补充。',kw:['记录','速写','观察']}
+);
