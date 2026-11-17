@@ -79,3 +79,10 @@ EARTH_PRODUCTS.push(
   {id:'HT-32',name:'厚壁陶瓷杯',tag:'日常',desc:'厚杯壁与握持温度成为喝咖啡时熟悉的触觉线索。',kw:['触感','温度','仪式']},
   {id:'HT-33',name:'纸面速写本',tag:'记录',desc:'用纸笔记录草图与日常观察，方便随手翻阅和补充。',kw:['记录','速写','观察']}
 );
+
+SPACE_SIGNALS.push({
+  id:'IE-32',name:'长周期模拟纳入延迟通信',tag:'远距通信',
+  desc:'NASA CHAPEA 火星模拟任务把通信延迟、长期隔离与有限补给纳入地面居住实验，可作为研究异步协作的观察起点。',
+  source:'https://www.nasa.gov/humans-in-space/chapea/chapea-mission-2/',sourceName:'NASA · CHAPEA',
+  kw:['异步协作','通信延迟']
+});

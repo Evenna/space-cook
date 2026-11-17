@@ -13,7 +13,7 @@ const rnd=(a,b)=>a+Math.random()*(b-a);
 const state={pot:[],cooking:false};
 
 const featuredPhotos={
-  'IE-31':'porthole','IE-11':'launch','IE-19':'lunar','IE-17':'station','IE-20':'habitat',
+  'IE-31':'porthole','IE-32':'habitat','IE-11':'launch','IE-19':'lunar','IE-17':'station','IE-20':'habitat',
   'IE-02':'solar','HT-31':'recorder','HT-32':'cup','HT-33':'notebook','SC-01':'first-night','HT-20':'tent','HT-29':'fabric'
 };
 function photo(kind,item,w=400){
@@ -36,7 +36,7 @@ const inPot=(kind,id)=>state.pot.some(p=>p.kind===kind&&p.item.id===id);
 const key=it=>it.kind+':'+it.item.id;
 
 const canvasEl=()=>$('#canvas');
-const category=Object.fromEntries(Object.entries(DESIGN_ZONES).map(([kind,zone])=>[kind,[zone.mark,zone.name]]));
+const category=Object.fromEntries(Object.entries(CLUE_ROLES).map(([kind,role])=>[kind,[role.mark,role.name]]));
 const clues=new Map(allItems().map(it=>[it.item.id,it]));
 const camera={x:0,y:0,zoom:1};
 const mounted=new Map();
@@ -45,43 +45,47 @@ world.className='material-world';
 canvasEl().appendChild(world);
 let paintFrame=0, flight=0, batch=0;
 
-// Coordinates are relative to the fixed pan. Only the nearby part of the map is mounted.
+const FIRST_CLUES={
+  space:['IE-32','IE-02','IE-06','IE-25','IE-17','IE-19','IE-18','IE-15','IE-05','IE-24'],
+  scene:['SC-01','SC-03','SC-02','SC-05','SC-10','SC-07','SC-09','SC-06','SC-11','SC-12'],
+  challenge:['CH-05','CH-08','CH-09','CH-12','CH-03','CH-01','CH-04','CH-06','CH-02','CH-10'],
+  earth:['HT-31','HT-32','HT-33','HT-01','HT-06','HT-13','HT-20','HT-29','HT-10','HT-28','HT-14']
+};
 function buildMap(){
   const nodes=[];
-  for(const [kind,zone] of Object.entries(DESIGN_ZONES)){
-    const {side,vertical}=zone;
-    const upper=vertical<0, photoGroup=kind==='space'||kind==='earth';
-    const origin={x:side*522,y:upper?-204:212};
-    nodes.push({id:'zone-'+kind,kind,x:origin.x,y:origin.y-(upper?128:146),w:408,h:52,zone});
-    zone.groups.forEach(([title,ids],group)=>{
-      const centerX=origin.x+(group-1)*132;
-      const all=ids.map(id=>clues.get(id)).filter(Boolean);
-      const count=photoGroup?3:2;
-      const labelY=origin.y-57+(group%2)*13;
-      nodes.push({id:kind+'/'+group,kind,x:centerX,y:labelY,w:118,h:24,label:title});
-      if(all.length>count)nodes.push({id:kind+'/'+group+'/more',kind,
-        x:origin.x+side*405,y:origin.y+(group-1)*102-36,w:102,h:24,label:title});
-      all.forEach((it,i)=>{
-        const photoTile=kind==='space'||kind==='earth';
-        const near=i<count;
-        const x=near?centerX+(photoTile?[-23,18,-14][i]:(i?8:-5)):
-          origin.x+side*(535+(i-count)*119);
-        const y=near?labelY+(photoTile?([68,132,190][i]+[0,12,-8][group]):(i?120:58)):
-          origin.y+(group-1)*102+((i+group)%2)*12;
-        const width=near?(photoTile?([91,76,54][i]+group*3):108):(photoTile?82:111);
-        const height=photoTile?(kind==='space'?width:width*.83):kind==='scene'?43:52;
-        nodes.push({id:it.item.id,kind,it,x,y,w:width,h:height,angle:photoTile?[-7,6,3,-4][(i+group)%4]:0});
-      });
+  const directions={space:[0,-1],earth:[1,0],challenge:[0,1],scene:[-1,0]};
+  for(const [kind,role] of Object.entries(CLUE_ROLES)){
+    const [dx,dy]=directions[kind];
+    const lead=FIRST_CLUES[kind].map(id=>clues.get(id));
+    const ids=new Set(FIRST_CLUES[kind]);
+    const items=[...lead,...[...clues.values()].filter(it=>it.kind===kind&&!ids.has(it.item.id))];
+    nodes.push({id:'zone-'+kind,kind,x:role.x,y:role.y,w:174,h:25,zone:{...role,mark:category[kind][0]}});
+    items.forEach((it,i)=>{
+      const slot=SCATTER[kind][i];
+      const j=i-SCATTER[kind].length;
+      const ring=Math.floor(Math.max(0,j)/6), sweep=((j%6)-2.5)*126+(j%2)*14;
+      const radius=(dy?541:865)+ring*177+(j%3)*15;
+      const [x,y,w]=slot||[dx*radius+dy*sweep,dy*radius+dx*sweep,92+(i%4)*11];
+      const h=kind==='space'?w:kind==='earth'?w*.72:kind==='scene'?38:54;
+      const angle=kind==='space'?0:[-7,3,-3,6,0][i%5];
+      nodes.push({id:it.item.id,kind,it,x,y,w,h,angle});
     });
   }
   return nodes;
 }
 const map=buildMap();
+const mechanism=item=>MECHANISMS[item.id]||item.kw?.[0]||item.name;
+const tension=item=>TENSIONS[item.id]||[item.name,item.block];
 function tileHTML(it){
   const {kind,item}=it;
   const badge=`<span class="tile-kind" aria-hidden="true">${category[kind][0]}</span>`;
-  if(kind==='scene'||kind==='challenge')return `${badge}<span>${esc(item.name)}</span>`;
-  return `${badge}<img src="${photo(kind,item,260)}" alt="" draggable="false" referrerpolicy="no-referrer"><span class="tlabel">${esc(item.name)}</span>`;
+  if(kind==='scene')return `${badge}<span>${esc(item.name)}</span><small>设定</small>`;
+  if(kind==='challenge'){
+    const [first,second]=tension(item);
+    return `${badge}<span class="tension-lines"><span>${esc(first)}</span><span>${esc(second)}</span></span>`;
+  }
+  const label=kind==='earth'?mechanism(item):item.sourceName||item.name;
+  return `${badge}<img src="${photo(kind,item,260)}" alt="" draggable="false" referrerpolicy="no-referrer"><span class="tlabel">${esc(label)}</span>`;
 }
 function createNode(node){
   if(node.it){
@@ -105,7 +109,7 @@ function createNode(node){
 }
 function metrics(){
   const {clientWidth:w,clientHeight:h}=canvasEl();
-  return {w,h,s:Math.min(w/1586,h/880),cx:w*.483,cy:h*.485};
+  return {w,h,s:w<760?Math.max(.34,Math.min(w/1060,h/1000)):Math.min(w/1586,h/970),cx:w*.483,cy:h*.49};
 }
 function drawCanvas(){
   const {w,h,s,cx,cy}=metrics(), {x,y,zoom}=camera;
@@ -131,12 +135,13 @@ function drawCanvas(){
     if(node.it){
       const selected=inPot(node.kind,node.it.item.id);
       el.classList.toggle('inpot',selected);
-      el.setAttribute('aria-pressed',String(selected));
+      el.setAttribute('aria-label','查看 '+node.it.item.name+(selected?'（已入锅）':''));
     }
   }
   for(const [id,el] of mounted){
     if(!keep.has(id)&&el!==drag?.el){el.remove();mounted.delete(id);}
   }
+  $('#panHome').classList.toggle('away',Math.abs(x)+Math.abs(y)>12||Math.abs(zoom-1)>.03);
   world.style.transform=`translate3d(${x}px,${y}px,0) scale(${zoom})`;
   $('#zoomValue').textContent=Math.round(zoom*100)+'%';
 }
@@ -158,12 +163,13 @@ function flyTo(x,y,zoom){
   flight=requestAnimationFrame(step);
 }
 function visitZone(kind,far=false){
-  const zone=DESIGN_ZONES[kind],{w,h,s,cx,cy}=metrics();
-  const zoom=w<760?2.05:1.27;
-  const x=cx+zone.side*(far?1120:520)*s;
-  const y=cy+(zone.vertical<0?-166:224)*s;
-  const targetX=w<760?w/2:w*(zone.side<0?.25:.75);
-  const targetY=h*(zone.vertical<0?.28:.72);
+  const role=CLUE_ROLES[kind],{w,h,s,cx,cy}=metrics();
+  const zoom=w<760?1.8:far?1.18:1.12;
+  const magnitude=far?2.05:1;
+  const x=cx+(kind==='challenge'?(far?0:role.x*.72):role.x*magnitude)*s;
+  const y=cy+(kind==='challenge'?(far?540:316):role.y*magnitude)*s;
+  const targetX=w*(w<760?.5:kind==='scene'?.25:kind==='earth'?.75:.5);
+  const targetY=h*(kind==='challenge'?.79:.25);
   flyTo(targetX-x*zoom,targetY-y*zoom,zoom);
 }
 function zoomCanvas(factor,x=innerWidth/2,y=innerHeight/2){
@@ -245,7 +251,7 @@ function wireCanvas(){
   app.addEventListener('pointercancel',end,true);
   $('#zoomIn').onclick=()=>zoomCanvas(1.2);
   $('#zoomOut').onclick=()=>zoomCanvas(1/1.2);
-  $('#zoomValue').onclick=()=>flyTo(0,0,1);
+  $('#zoomValue').onclick=$('#panHome').onclick=()=>flyTo(0,0,1);
   $$('[data-zone-jump]').forEach(button=>button.onclick=()=>visitZone(button.dataset.zoneJump));
 }
 
@@ -314,7 +320,7 @@ function moveGhost(x,y,silent){
 function addToPot(it,origin){
   if(inPot(it.kind,it.item.id))return;
   state.pot.push(it);
-  if($('.clue-dialog[open]'))$('#clueDialog').close();
+
   requestCanvas();
   renderCluster(true,origin);
   refreshCook();
@@ -368,61 +374,57 @@ function renderCluster(justAdded,origin){
   });
 }
 
-function hasSignal(){return state.pot.some(p=>p.kind==='space');}
-function hasEarth(){return state.pot.some(p=>p.kind==='earth');}
-function canCook(){return hasSignal()&&hasEarth();}
-
-function refreshCook(){
-  const btn=$('#cookBtn'),hint=$('#cookHint'),stage=$('#stage');
-  const ok=canCook();
-  btn.disabled=!ok||state.cooking;
-  stage.classList.toggle('hot',ok&&!state.cooking);
-  const n=state.pot.length;
-  if(n===0)hint.innerHTML='把食材拖进锅里 · 已选 <b>0</b> 条线索';
-  else if(!hasSignal())hint.innerHTML=`已选 <b>${n}</b> 条线索 · 还差一个 ✦ 太空信号`;
-  else if(!hasEarth())hint.innerHTML=`已选 <b>${n}</b> 条线索 · 还差一个 ◆ 地球同款`;
-  else{
-    const scene=state.pot.some(item=>item.kind==='scene'), limit=state.pot.some(item=>item.kind==='challenge');
-    hint.textContent=scene&&limit?`已选 ${n} 条 · 可以检验设计假设`
-      :scene?`已选 ${n} 条 · 可加一个限制试试`
-      :`已选 ${n} 条 · 可加一个旅客时刻`;
-  }
+function canCook(){return state.pot.length>=2;}
+function frameRecipe(recipe){
+  const first=kind=>recipe.find(p=>p.kind===kind)?.item;
+  const signal=first('space'), scene=first('scene'), challenge=first('challenge'), method=first('earth');
+  const borrow=method&&mechanism(method);
+  const pair=challenge&&tension(challenge);
+  if(signal&&challenge)return {label:'机会',question:`「${signal.name}」带来的变化，能怎样缓解「${pair[0]}／${pair[1]}」的取舍？`};
+  if(challenge&&method)return {label:'试做',question:`用「${borrow}」，能同时照顾「${pair[0]}」与「${pair[1]}」吗？`};
+  if(scene&&method)return {label:'场景',question:`在「${scene.name}」里，「${borrow}」会帮到谁？`};
+  if(signal&&scene)return {label:'推演',question:`把「${signal.name}」放进「${scene.name}」，谁的日常会先改变？`};
+  const names=recipe.slice(0,2).map(p=>p.item.name);
+  return {label:'探索',question:`「${names[0]}」遇到「${names[1]}」时，谁会遇到一个新问题？`};
 }
-
+function refreshCook(){
+  const btn=$('#cookBtn'),n=state.pot.length;
+  btn.disabled=!canCook()||state.cooking;
+  $('#stage').classList.toggle('hot',canCook()&&!state.cooking);
+  $('#cookHint').textContent=n>=2?`已选 ${n} 条线索`:n?`已选 1 条 · 再加一条`:'拖两条线索进锅';
+  const question=$('#recipeQuestion');
+  question.hidden=n<2;
+  question.textContent=n>=2?frameRecipe(state.pot).question:'';
+}
 function luckyFill(){
   if(state.cooking)return;
   clearPot();
-  const sig=pick(SPACE_SIGNALS), ert=pick(EARTH_PRODUCTS);
-  const sc=Math.random()<0.8?pick(SCENES):null;
-  const ch=Math.random()<0.8?pick(CHALLENGES):null;
-  const combo=[{kind:'space',item:sig},{kind:'earth',item:ert}];
-  if(sc)combo.push({kind:'scene',item:sc});
-  if(ch)combo.push({kind:'challenge',item:ch});
-  // ensure those tiles exist on canvas (add fresh if not in current pool)
-  combo.forEach(c=>{
-    addToPot(c);
-    const t=$(`.tile[data-key="${key(c)}"]`,canvasEl());
-    if(t)t.classList.add('inpot');
-  });
+  const pair=pick(DESIGN_LINKS);
+  for(const id of pair.slice(0,Math.random()<.5?2:3)){
+    const clue=clues.get(id);
+    if(clue)addToPot(clue);
+  }
 }
 
 function inspectClue(it){
   if(state.cooking)return;
   const dialog=$('#clueDialog'), body=$('#clueBody');
-  const {item,kind}=it, zone=DESIGN_ZONES[kind];
-  const group=zone.groups.find(([,ids])=>ids.includes(item.id))?.[0];
-  const fields=kind==='scene'?[['谁',item.who],['发生了什么',item.moment],['感受',item.emo]]
-    :kind==='challenge'?[['限制',item.block],['设计切口',item.twist]]
-    :[[kind==='space'?'变化线索':'可借做法',item.desc]];
+  const {item,kind}=it, zone=CLUE_ROLES[kind];
+  const status=kind==='space'?(item.source?'有来源':'观察线索 · 待核'):kind==='earth'?'已有做法':'课堂设定';
+  const fields=kind==='scene'?[['谁',item.who],['假设发生了什么',item.moment],['可能的感受',item.emo]]
+    :kind==='challenge'?[['两个需要兼顾的目标',tension(item).join(' / ')],['背景线索',item.block]]
+    :kind==='earth'?[['可借的那一步',mechanism(item)],['原有案例',item.desc]]
+    :[[item.source?'观察到的变化':'待核查的观察',item.desc]];
   const suggestions=[...new Set(DESIGN_LINKS.filter(link=>link.includes(item.id)).flat())]
     .filter(id=>id!==item.id).map(id=>clues.get(id)).filter(Boolean).slice(0,5);
   body.dataset.kind=kind;
-  body.innerHTML=`<div class="clue-kicker">${zone.mark} ${zone.name} · ${esc(group||item.tag)}</div>
+  body.innerHTML=`<div class="clue-kicker">${category[kind][0]} ${zone.name} · ${status}</div>
     <h2 id="clueTitle">${esc(item.name)}</h2>
     ${kind==='space'||kind==='earth'?`<img class="clue-image" src="${photo(kind,item,500)}" alt="">`:''}
+    ${item.source?`<span class="source-caption">配图为课堂示意</span> · <a class="clue-source" href="${item.source}" target="_blank" rel="noopener">查看 ${esc(item.sourceName)} ↗</a>`: ''}
     <p class="clue-question">${zone.question}</p>
     <dl>${fields.map(([label,value])=>`<div><dt>${label}</dt><dd>${esc(value)}</dd></div>`).join('')}</dl>
-    ${suggestions.length?`<section class="clue-related"><h3>可以搭配的线索</h3>${suggestions.map(other=>`<button data-related-clue="${other.item.id}">${DESIGN_ZONES[other.kind].mark} ${esc(other.item.name)} <span>↗</span></button>`).join('')}</section>`:''}
+    ${suggestions.length?`<section class="clue-related"><h3>可以搭配的线索</h3>${suggestions.map(other=>`<button data-related-clue="${other.item.id}">${CLUE_ROLES[other.kind].mark} ${esc(other.item.name)} <span>↗</span></button>`).join('')}</section>`:''}
     <button class="clue-add" ${inPot(kind,item.id)?'disabled':''}>${inPot(kind,item.id)?'已在锅中':'加入锅中 ＋'}</button>`;
   $('.clue-add',body).onclick=()=>{
     dialog.close();
@@ -481,12 +483,12 @@ function openResults(){
   if(results.classList.contains('show'))return;
   lastFocus=document.activeElement;
   results.classList.add('show');
-  $('#app').inert=true;
+
   $('#rclose').focus({preventScroll:true});
 }
 function closeResults(){
   $('#results').classList.remove('show');
-  $('#app').inert=false;
+
   const target=lastFocus?.disabled?$('#openDeck'):lastFocus;
   target?.focus({preventScroll:true});
 }
@@ -532,11 +534,15 @@ function paintDeck(direction=0,fromPan=false){
     ${ideas.length>1?`<button class="deck-peek before" data-deck-step="-1" aria-label="上一张灵感"><small>←</small><span>${esc(title(-1))}</span></button><button class="deck-peek after" data-deck-step="1" aria-label="下一张灵感"><small>→</small><span>${esc(title(1))}</span></button>`:''}
     <article class="note deck-card">
       <header><span class="num">灵感 / ${String(activeIdea+1).padStart(2,'0')}</span><button class="save-idea" aria-pressed="${isSaved}">${isSaved?'✓ 已收藏':'＋ 收藏'}</button></header>
-      <h3>${esc(idea.title)}</h3>
-      <div class="value">${value}</div>
-      ${idea.moment?`<div class="moment"><span class="ml">使用时刻</span>${esc(idea.moment)}</div>`:''}
-      <div class="tags">${tags}</div>
-      <footer><button class="recook-idea" ${state.cooking||(!canCook()&&!idea.recipe?.length)?'disabled':''}>↻ 回锅再想</button></footer>
+      <div class="idea-front"><h3>${esc(idea.title)}</h3><div class="value">${value}</div><div class="tags">${tags}</div></div>
+      <div class="idea-back" hidden>
+        <h3>这条想法怎么验证？</h3>
+        ${idea.recipe?.length?`<div class="moment"><span class="ml">借用的线索</span>${idea.recipe.map(ingrChip).join('')}</div>`:''}
+        ${idea.assumption?`<div class="moment"><span class="ml">关键假设</span>${esc(idea.assumption)}</div>`:''}
+        ${idea.question?`<div class="moment"><span class="ml">下一步追问</span>${esc(idea.question)}</div>`:''}
+        ${idea.moment?`<div class="moment"><span class="ml">${idea.assumption?'最小验证':'使用时刻'}</span>${esc(idea.moment)}</div>`:''}
+      </div>
+      <footer><button class="flip-idea" aria-pressed="false">翻面看假设</button><button class="recook-idea" ${state.cooking||(!canCook()&&!idea.recipe?.length)?'disabled':''}>↻ 回锅再想</button></footer>
     </article>`;
   const card=$('.deck-card',grid);
   if((direction||fromPan)&&!reduceMotion()){
@@ -572,6 +578,16 @@ function wireDeck(){
     const idea=deckIdeas()[activeIdea];
     if(!idea)return;
     if(e.target.closest('.recook-idea')){remix(idea);return;}
+    const flip=e.target.closest('.flip-idea');
+    if(flip){
+      const next=flip.getAttribute('aria-pressed')!=='true', card=flip.closest('.deck-card');
+      const face=$(next?'.idea-back':'.idea-front',card);
+      $('.idea-front',card).hidden=next;$('.idea-back',card).hidden=!next;
+      flip.setAttribute('aria-pressed',String(next));
+      flip.textContent=next?'回到提案':'翻面看假设';
+      if(!reduceMotion())face.animate([{opacity:0,transform:'translateY(6px) scale(.98)'},{opacity:1,transform:'none'}],{duration:230,easing:'ease-out'});
+      return;
+    }
     if(!e.target.closest('.save-idea'))return;
     if(savedIdeas.some(item=>item.id===idea.id))savedIdeas=savedIdeas.filter(item=>item.id!==idea.id);
     else savedIdeas=[...savedIdeas,idea];
@@ -625,22 +641,24 @@ function remix(idea){
 
 /* ---------- AI generation (DeepSeek) ---------- */
 function recipeText(recipe){
-  const g=k=>recipe.filter(p=>p.kind===k).map(p=>p.item);
-  const sig=g('space'),ert=g('earth'),sc=g('scene'),ch=g('challenge');
-  let t='【太空信号】'+sig.map(s=>`${s.name}（${s.desc||s.tag||''}）`).join('；')+'\n';
-  t+='【地球同款】'+ert.map(s=>`${s.name}（${s.desc||s.tag||''}）`).join('；')+'\n';
-  if(sc.length)t+='【场景】'+sc.map(s=>`${s.name}：${s.who||''}在「${s.moment||''}」`).join('；')+'\n';
-  if(ch.length)t+='【挑战】'+ch.map(s=>`${s.name}：${s.block||''}`).join('；')+'\n';
-  return t;
+  return recipe.map(({kind,item})=>{
+    const detail=kind==='space'?`${item.desc}（${item.source?'来源 '+item.source:'待核观察'}）`
+      :kind==='earth'?`${mechanism(item)}。案例：${item.desc}`
+      :kind==='scene'?`课堂设定：${item.who}在「${item.moment}」`
+      :`课堂假设：${tension(item).join(' / ')}`;
+    return `【${CLUE_ROLES[kind].name}】${item.name} · ${detail}`;
+  }).join('\n');
 }
 async function aiGenerate(recipe,apiKey){
-  const sys=`你是用未来设计方法研究太空旅居的设计师。先指出太空变化带来的新机会，再从地球案例提取可迁移的机制，落到具体的人和时刻，最后用限制检验。把未经证实的假设写为待验证。用户给你几样"食材"：太空真实技术/物理规则、地球已有好产品、太空旅客的真实场景与硬约束。请把它们融合，设计出"只有太空旅馆才需要、才能成立"的新产品/服务/系统。要求：具体、可成立、有画面、有商业感，不要空话。`;
+  const sys=`你是用未来设计方法研究太空旅居的设计师。先指出太空变化带来的新机会，再从地球案例提取可迁移的机制，落到具体的人和时刻，最后用限制检验。把未经证实的假设写为待验证。用户会任意组合变化信号、情境条件、处境张力、可借机制中的两条或多条。基于实际选中的线索推演，可提出装置、服务或规则。缺少的要素以明确的假设或追问表达，不可捏造已验证的事实、用户需求或来源。`;
   const seed=state._seed?`\n（在上一轮「${state._seed}」的基础上，换个角度再想，不要重复。）`:'';
   const usr=`食材如下：\n${recipeText(recipe)}${seed}
 请输出 4 个点子。严格返回 JSON 数组，每个元素字段：
 "title"：产品名（4-10字，有记忆点）
 "value"：一句话价值主张，必须是"为〔谁〕在〔什么时刻〕，通过〔怎么做〕，带来〔什么改变〕"的句式，把关键词用 <b></b> 包住（2-3 处）
-"moment"：这个产品精准接住了旅客的哪个具体时刻/情绪（一句话）
+"moment"：最小课堂验证动作（一句话）
+"assumption"：决定这个想法能否成立的一个假设（一句话）
+"question"：学生接下来该追问哪一个问题（一句话）
 "tags"：3-4 个关键词数组
 只返回 JSON，不要任何解释或 markdown 代码块。`;
   const r=await fetch('https://api.deepseek.com/chat/completions',{
@@ -655,6 +673,7 @@ async function aiGenerate(recipe,apiKey){
   if(!Array.isArray(arr))throw Error('Invalid idea payload');
   const ideas=arr.filter(item=>typeof item?.title==='string'&&typeof item.value==='string').slice(0,4).map(item=>({
     title:item.title,value:item.value,moment:typeof item.moment==='string'?item.moment:'',
+    assumption:typeof item.assumption==='string'?item.assumption:'',question:typeof item.question==='string'?item.question:'',
     tags:Array.isArray(item.tags)?item.tags.filter(tag=>typeof tag==='string'):[]
   }));
   if(!ideas.length)throw Error('No usable ideas');
@@ -663,58 +682,41 @@ async function aiGenerate(recipe,apiKey){
 
 /* ---------- local fallback idea engine ---------- */
 function localGenerate(recipe){
-  const g=k=>recipe.filter(p=>p.kind===k).map(p=>p.item);
-  const sig=g('space'),ert=g('earth'),sc=g('scene'),ch=g('challenge');
-  const S=sig[0]||{name:'太空信号',kw:['太空']}, E=ert[0]||{name:'地球产品',kw:['产品']};
-  const SC=sc[0], CH=ch[0];
-  const sk=(S.kw||[])[0]||S.name, ek=(E.kw||[])[0]||E.name;
-  const who=SC?SC.who:'太空旅客', mom=SC?SC.moment:'漂浮在轨道上的日常';
-  const emo=SC?SC.emo:'对失重既新鲜又不安';
-  const block=CH?CH.block:'失重、辐射、补给受限的硬约束';
-  const twist=CH?CH.twist:'把太空的限制变成独一无二的体验';
-
-  const b=t=>`<b>${esc(t)}</b>`;
-  const stems=[
-    {
-      suf:'舱',pre:'悬浮',
-      title:`${S.name.slice(0,3)}${E.name.slice(0,3)}舱`,
-      value:`为${b(who)}，在${b(mom)}的时刻，把${b(E.name)}用${b(S.name)}重做一遍，让${sk}不再是麻烦，而是只有这里才有的享受。`,
-      moment:`接住「${mom}」——${emo}。`,
-      tags:[sk,ek,'失重专属', SC?SC.tag:'体验']
-    },
-    {
-      title:`零重力·${E.name}`,
-      value:`借${b(S.name)}的原理，把地球上的${b(E.name)}改造成${b('失重版')}，专门解决「${block}」带来的别扭。`,
-      moment:CH?`破解「${CH.name}」：${twist}。`:`让旅客第一次觉得"太空版"比地球版更好用。`,
-      tags:[sk, ek, CH?CH.name:'零重力', '新物种']
-    },
-    {
-      title:`${S.name.slice(0,2)}${E.name.slice(0,2)}·订阅服务`,
-      value:`把${b(S.name)}+${b(E.name)}做成${b('按次订阅的旅馆服务')}，旅客入住即可体验，离开可把数据/纪念带回地球。`,
-      moment:`接住「${mom}」，让一次性的震撼变成可反复回味的记忆。`,
-      tags:[sk,ek,'订阅制','可带走']
-    },
-    {
-      title:`${E.name.slice(0,3)}·星空版`,
-      value:`以${b(S.name)}为卖点，重做${b(E.name)}的仪式感，让${b(who)}在${b(mom)}获得"地球上永远给不了"的那一刻。`,
-      moment:SC?`${emo}——正是这款产品要接住的情绪。`:`把科技参数翻译成旅客能感受到的浪漫。`,
-      tags:[sk, ek, SC?SC.tag:'情绪', '卖点']
-    },
+  const first=kind=>recipe.find(p=>p.kind===kind)?.item;
+  const signal=first('space'), scene=first('scene'), challenge=first('challenge'), method=first('earth');
+  const pair=challenge&&tension(challenge);
+  const who=scene?.who||'未来驻留者';
+  const moment=scene?.name||'一天中需要作决定的时刻';
+  const material=recipe.slice(0,2).map(p=>p.item.name).join(' × ');
+  const framing=frameRecipe(recipe);
+  const borrowed=method?mechanism(method):null;
+  const issue=pair?`在「${pair[0]}」与「${pair[1]}」之间取舍`:'判断这个组合能否解决一个真实麻烦';
+  const idea=(title,value,assumption,test,question=framing.question)=>({
+    title,value,assumption,question,moment:test,tags:[framing.label,'课堂推演']
+  });
+  const ideas=[
+    idea('把决定留给使用者',
+      `在「${moment}」，给${who}一个可以延后、继续或退出的选项。${borrowed?`用「${borrowed}」把两次操作分开。`:`用「${material}」设定一个前后对照。`}`,
+      '使用者需要掌控时机，而且愿意多做一次选择。',
+      '做两版纸面流程，一版允许延后，一版直接执行，比较同学会怎么选。'),
+    idea('把冲突变成可协商的约定',
+      `让${who}和同伴先决定何时共享、何时留给个人。用一张双面提示卡标记两种状态，帮他们${issue}。`,
+      '同伴能看懂提示，也愿意在需要时改变约定。',
+      '本组两人分别扮演当事人和同伴，记录第一次出现意见分歧的位置。'),
+    idea('先把变化看得见',
+      `在「${moment}」开始前，用一个简短信号提示${signal?`「${signal.name}」可能带来的变化`:`「${material}」组合中的隐含条件`}，让使用者知道接下来会发生什么。`,
+      '提前知道变化，能让使用者更从容地行动。',
+      '一组先看提示，一组直接体验。同场比较两组能否说出下一步。')
   ];
-  // shuffle lightly so remix feels different
-  const ideas=stems.sort(()=>Math.random()-0.5).slice(0,4);
-  const soundLetter=S.id==='IE-31'&&E.id==='HT-31';
-  if(soundLetter&&!state._seed){
-    ideas[0]={title:'月面声音家书',
-      value:'为第一次到月面、在舱里独处的旅客，把盘式录音机的'+b('异步留声')+'移植到床边播放器。看见地球却无法马上通话时，按一下就能听到家人的日常声音。',
-      moment:CH?'带着「'+CH.name+'」做一次模拟：在同一情境下比较语音和环境声，看哪种更愿意重听。':'入住第一夜，先比较 30 秒家人语音与日常环境声，记录哪一种让人更愿意重听。',
-      tags:['月面栖居','异步留声','课堂待验证']};
+  if(method?.id==='HT-31'&&(scene?.id==='SC-01'||challenge?.id==='CH-05'||signal?.id==='IE-32')){
+    ideas[0]=idea('声音家书','把「先录后听」做成床边的一键收听。家人留言先抵达，旅客挑一个适合自己的时刻再听。',
+      '旅客需要陪伴感，也在意何时播放、谁能听见留言。',
+      '比较家人语音、生活环境声和静音三组选项，记录同学愿意重听什么、何时重听。');
   }
-  if(state._seed){
-    ideas[0]={...ideas[0],title:'换个时刻 · '+E.name,
-      value:`沿着「${b(state._seed)}」再走一步：把同一组合挪到${b('离舱前最后五分钟')}，让旅客决定哪段体验要留在舱内、哪段想带回地球。`,
-      moment:'做两张纸面流程卡，让同学选取一段记忆并解释选择。'};
-  }
+  if(state._seed)ideas.unshift(idea('换个条件再试',
+    `从「${state._seed}」出发，把同一套做法放到需要和别人共享的环境，观察它在哪一步会失效。`,
+    '原方案依赖一个人可以自由决定使用时间。',
+    '把原方案的体验流程复制一份，只改变共享条件，记录必须调整的步骤。'));
   return ideas;
 }
 
@@ -731,7 +733,7 @@ function wire(){
   $('#diceBtn').onclick=luckyFill;
   $('#shuffleBtn').onclick=()=>{
     if(drag)return;
-    const kinds=Object.keys(DESIGN_ZONES);
+    const kinds=Object.keys(CLUE_ROLES);
     visitZone(kinds[batch++%kinds.length],true);
   };
   $('#rclose').onclick=closeResults;
@@ -747,7 +749,7 @@ function wire(){
   $('#howClose').onclick=()=>closeModal('howModal');
   $$('.modal').forEach(m=>m.onclick=e=>{if(e.target===m)m.classList.remove('show');});
   document.addEventListener('keydown',e=>{
-    if(e.key==='Escape'){const modal=$('.modal.show');if(modal)modal.classList.remove('show');else if($('.results.show'))closeResults();}
+    if(e.key==='Escape'&&!$('.clue-dialog[open]')){const modal=$('.modal.show');if(modal)modal.classList.remove('show');else if($('.results.show'))closeResults();}
   });
 
   let resizeFrame;
@@ -760,7 +762,7 @@ function wire(){
 function boot(){
   renderCanvas();
   wire();
-  const starters=['IE-31','SC-01','HT-31'];
+  const starters=['IE-32','SC-01','HT-31'];
   const items=allItems();
   state.pot=starters.map(id=>items.find(it=>it.item.id===id)).filter(Boolean);
   for(const item of state.pot){

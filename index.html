@@ -104,7 +104,7 @@
 .tagc{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:700}
 .tagc.sig{background:var(--blue-soft);color:var(--blue)}.tagc.scn{background:#dff3ec;color:var(--scene)}.tagc.chl{background:#fdebe3;color:var(--chal)}
 </style>
-<link rel="stylesheet" href="forge.css?v=3">
+<link rel="stylesheet" href="forge.css?v=4">
 </head>
 <body>
 <div id="app">
@@ -121,14 +121,14 @@
   <div id="canvas" aria-label="素材画布"></div>
 
   <div class="stage" id="stage" aria-label="线索合成锅">
-    <div class="pan-handle" aria-hidden="true"></div>
+    <button class="pan-handle" id="panHome" aria-label="回到原点" title="回到原点"><span aria-hidden="true">⌖</span></button>
     <div class="catcher pan" id="catcher">
       <svg class="pan-outline" viewBox="0 0 480 480" aria-hidden="true">
         <path d="M240 5C309 5 360 32 400 69L431 81Q442 85 439 97L439 118C462 154 475 196 475 240A235 235 0 1 1 240 5Z"/>
       </svg>
       <div class="emptyhint" id="emptyHint">
         <div class="big">把线索拖进锅里</div>
-        <div class="sm">各选至少一条太空信号和地球同款</div>
+        <div class="sm">任意两条线索就能开始</div>
       </div>
       <svg class="stir-traces" viewBox="0 0 480 480" aria-hidden="true">
         <path d="M149 81C93 98 63 140 59 188M181 433c100 32 182-9 210-78"/>
@@ -141,15 +141,15 @@
 
   <div class="cookdock">
     <button class="cookbtn" id="cookBtn" disabled>Cooking <span class="arr" aria-hidden="true">↗</span></button>
-    <div class="cookhint" id="cookHint" aria-live="polite">已选 0 条线索</div>
+    <div class="cookhint" id="cookHint" aria-live="polite">已选 0 条线索</div><div class="recipe-question" id="recipeQuestion"></div>
     <div class="cook-links"><button class="dice" id="diceBtn">手气模式</button><button class="dice" id="openDeck">灵感册</button></div>
   </div>
 
   <nav class="zone-nav" aria-label="定位到素材区域">
-    <button data-zone-jump="space"><span>✧</span>太空变化</button>
-    <button data-zone-jump="earth"><span>◆</span>地球借法</button>
-    <button data-zone-jump="scene"><span>≋</span>旅客时刻</button>
-    <button data-zone-jump="challenge"><span>△</span>设计限制</button>
+    <button data-zone-jump="space"><span>✧</span>变化信号</button>
+    <button data-zone-jump="earth"><span>◆</span>可借机制</button>
+    <button data-zone-jump="scene"><span>≋</span>情境条件</button>
+    <button data-zone-jump="challenge"><span>△</span>处境张力</button>
   </nav>
   <div class="canvas-tools" aria-label="画布缩放">
     <button id="zoomOut" aria-label="缩小画布">−</button>
@@ -166,9 +166,9 @@
 </dialog>
 
 <!-- results -->
-<div class="results" id="results" role="dialog" aria-modal="true" aria-labelledby="resultsTitle">
+<div class="results" id="results" role="region" aria-labelledby="resultsTitle">
   <div class="rsheet">
-    <div class="rhead"><span class="bar"></span><h2 id="resultsTitle">灵感出锅</h2><button class="rclose" id="rclose">✕ 回到厨房</button></div>
+    <div class="rhead"><span class="bar"></span><h2 id="resultsTitle">灵感出锅</h2><button class="rclose" id="rclose">✕ 收起</button></div>
     <div class="recipe" id="recipeLine"></div>
     <div class="result-tabs" aria-label="灵感视图">
       <button id="showLatest" aria-pressed="true">本轮灵感</button>
@@ -196,21 +196,21 @@
 <!-- how modal -->
 <div class="modal" id="howModal"><div class="sheet">
   <h3>? 这是一间「脑暴厨房」</h3>
-  <p>食材漂在画布上。把想要的<b>拖进中心熔炉</b>，它们会堆成一团；点火 Cooking，炖出<b>太空旅馆的新物种</b>。</p>
+  <p>平移画布逛素材，点开看详情，或把线索直接拖进锅里。</p>
   <ol>
-    <li><b class="tagc sig">太空信号</b> 真实太空技术 / 物理规则（<b>至少 1 个</b>）</li>
-    <li><b class="tagc" style="background:#eee;color:#141414">地球同款</b> 已有的好产品 / 方案（<b>至少 1 个</b>）</li>
-    <li><b class="tagc scn">场景</b> 太空旅客的真实时刻（可选 · 让 idea 有血有肉）</li>
-    <li><b class="tagc chl">挑战</b> 要破解的太空硬约束（可选 · 让 idea 有锋芒）</li>
+    <li><b>变化信号</b> · 观察到了什么变化？</li>
+    <li><b>情境条件</b> · 我们先设定怎样的未来？</li>
+    <li><b>处境张力</b> · 谁在两种需求之间取舍？</li>
+    <li><b>可借机制</b> · 哪个做法值得迁移？</li>
   </ol>
-  <p class="mini">① 把线索<b>拖进锅里</b>，或点开线索详情再加入&nbsp;② 不想选点 <b>🎲手气模式</b> 随机抓一把<br>③ 点 <span class="kbd">Cooking</span> 点火 &nbsp;④ 蹦出带「产品名+一句话价值+接住哪个时刻」的便利贴<br>⑤ 左右滑动浏览灵感，收藏或回锅再做一轮</p>
+  <p class="mini">随便两条即可 Cooking。翻面看假设和验证方式。点锅柄回到原点，锅里的线索会保留。</p>
   <div class="row" style="margin-top:18px"><button class="primary" id="howClose">开始下厨</button></div>
 </div></div>
 
-<script src="data.js?v=20261117"></script>
+<script src="data.js?v=20261117-4"></script>
 <script src="spice.js"></script>
 <script src="photos.js"></script>
-<script src="design-map.js?v=1"></script>
-<script src="app.js?v=20261117-3"></script>
+<script src="design-map.js?v=2"></script>
+<script src="app.js?v=20261117-4"></script>
 </body>
 </html>

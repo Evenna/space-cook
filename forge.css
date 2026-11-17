@@ -238,3 +238,42 @@ button:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
 .material-world .tile.inpot::after{content:"✓";position:absolute;right:5px;bottom:5px;background:#fff9ed;color:#283f9c;border-radius:50%;display:grid;place-items:center;width:17px;height:17px;font-size:11px}
 .material-world .tile.inpot[data-kind=scene]::after{right:3px;top:50%;bottom:auto;translate:0 -50%}
 .material-world .tile.inpot:hover,.material-world .tile.inpot:focus-visible{opacity:.92}
+
+/* Radial spread: no panels divide the different clue families. */
+.zone-label{border:0;gap:3px;opacity:.83}
+.zone-label span{display:none}
+.zone-label strong{font:600 clamp(11px,calc(17px * var(--map-scale)),17px)/1.2 var(--serif)}
+.material-world .tile[data-kind=space]{outline-width:1px;background:#e7e4e0}
+.material-world .tile[data-kind=earth] .tlabel,.material-world .tile[data-kind=space]:has(img[src$="habitat.jpg"]) .tlabel{opacity:1;transform:none;padding:11px 5px 4px;text-align:center}
+.material-world .tile.txt[data-kind=scene]{grid-template-columns:1fr auto;align-items:center;gap:4px;padding-right:7px}
+.material-world .tile.txt[data-kind=scene] small{display:block;font-size:.65em;letter-spacing:0;color:#6a5185}
+.material-world .tile.txt[data-kind=challenge]{justify-content:start;text-align:left;background:#efe5dc;padding-left:clamp(15px,calc(25px * var(--map-scale)),27px);border-color:#bf9a84;font-size:clamp(7px,calc(12.6px * var(--map-scale)),13px)}
+.material-world .tile.txt[data-kind=challenge] span:last-child{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-height:2.4em}
+.pan-handle{z-index:2;pointer-events:auto;border:0;color:white;transition:background .2s}
+.pan-handle::after{display:none}
+.pan-handle>span{position:absolute;left:50%;bottom:11%;translate:-50% 0;rotate:-38deg;background:#f6f0e7;color:#263bc7;border-radius:99px;
+  width:clamp(15px,2.05vw,32px);aspect-ratio:1;display:grid;place-items:center;font-size:clamp(12px,1.4vw,22px);line-height:1;opacity:.72;transition:opacity .2s,scale .2s}
+.pan-handle.away>span,.pan-handle:hover>span,.pan-handle:focus-visible>span{opacity:1;scale:1.11}
+.catcher.pan{z-index:3}
+.recipe-question{width:min(300px,33vw);font:500 clamp(9px,.88vw,13px)/1.45 var(--serif);text-align:center;color:#604b3e;overflow-wrap:anywhere}
+.recipe-question[hidden],.idea-front[hidden],.idea-back[hidden]{display:none}
+.clue-source{display:inline-block;margin-top:5px;color:#283f9c;font-size:12px;text-underline-offset:3px}
+.results{inset:62px 13px auto auto;width:min(416px,42vw);max-height:calc(100svh - 110px);padding:12px;overflow:auto;border-radius:12px;border:1px solid #ddcdbd;box-shadow:0 14px 48px #4332272b}
+.results.show{background:#f9f4ecf8;backdrop-filter:blur(7px)}
+.results .rhead h2{font-size:23px}.results .rclose{padding:4px 8px;font-size:10px}
+.results .recipe{font-size:10px}.results .result-tabs button{font-size:11px}
+.results #noteGrid{min-height:216px;padding-top:14px}
+.results .deck-card.note{width:89%;min-height:207px;padding:14px 15px 11px}
+.results .deck-card h3{font-size:23px}.results .deck-card .value{font-size:12px}
+.results .deck-card footer{justify-content:space-between}
+.results .moment{margin-top:6px}.results .moment .ingr{padding:0 3px}
+.flip-idea{border:0;background:#ede7de;border-radius:4px;padding:5px 7px;font-size:11px;color:#504437}
+@media(max-width:760px){
+  .results{inset:auto 8px 48px;width:auto;max-height:55svh}
+  .recipe-question{width:76vw}.cookdock{gap:5px}.zone-nav{bottom:1%}
+}
+.material-world .tile.txt[data-kind=challenge] .tension-lines{display:grid;max-height:none;gap:2px}
+.material-world .tile.txt[data-kind=challenge] .tension-lines span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-height:none}
+.material-world .tile.txt[data-kind=challenge] .tension-lines span+span{color:#6e5347}
+.source-caption{font-size:10px;color:#685c50}
+@media(min-width:761px){.cookdock{top:calc(var(--pan-center) + var(--pan-size) / 2 + 3%);gap:5px}}
