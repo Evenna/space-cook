@@ -65,62 +65,185 @@ const featured={
   challenge:['CH-01','CH-08','CH-02','CH-06','CH-09']
 };
 
-function shuffled(items){
-  const copy=[...items];
-  for(let i=copy.length-1;i>0;i--){
-    const j=Math.floor(Math.random()*(i+1));
-    [copy[i],copy[j]]=[copy[j],copy[i]];
-  }
-  return copy;
-}
-let CURRENT=[];
-function samplePool(initial){
-  const all=allItems();
-  return Object.keys(placements).flatMap(kind=>{
-    const available=all.filter(it=>it.kind===kind);
-    const items=initial?featured[kind].map(id=>available.find(it=>it.item.id===id)).filter(Boolean):shuffled(available);
-    return items.filter(it=>initial||!inPot(kind,it.item.id)).slice(0,placements[kind].length);
-  });
-}
+const category={
+  space:['✧','太空信号'],earth:['◆','地球同款'],scene:['≋','场景'],challenge:['△','挑战']
+};
+const roamingSlots=[
+  [707,335,103,92,-9],[807,494,131,110,6],[729,653,91,102,8],[846,780,118,85,-10]
+];
+const camera={x:0,y:0,zoom:1,batch:0};
+const mounted=new Map();
+let worldExtent='';
+const world=document.createElement('div');
+world.className='material-world';
+canvasEl().appendChild(world);
+let paintFrame=0;
 
 function tileHTML(it){
   const {kind,item}=it;
-  if(kind==='scene'||kind==='challenge')return `<span>${esc(item.name)}</span>${kind==='challenge'?'<small>挑战</small>':''}`;
+  const badge=`<span class="tile-kind" aria-hidden="true">${category[kind][0]}</span>`;
+  if(kind==='scene'||kind==='challenge')return `${badge}<span>${esc(item.name)}</span><small>${category[kind][1]}</small>`;
   const src=photo(kind,item,260);
-  return `<img src="${src}" alt="" draggable="false" referrerpolicy="no-referrer"><span class="tlabel">${esc(item.name)}</span>`;
+  return `${badge}<img src="${src}" alt="" draggable="false" referrerpolicy="no-referrer"><span class="tlabel">${esc(item.name)}</span>`;
 }
-
+const catalog=Object.fromEntries(Object.keys(placements).map(kind=>[kind,allItems().filter(it=>it.kind===kind)]));
+function areaItems(kind,col,row){
+  const pool=catalog[kind];
+  if(!camera.batch&&col===0&&row===0)return featured[kind].map(id=>pool.find(it=>it.item.id===id)).filter(Boolean);
+  const offset=((col*7+row*11+camera.batch*13)%pool.length+pool.length)%pool.length;
+  const count=col||row?Math.ceil(placements[kind].length*.63):placements[kind].length;
+  return Array.from({length:count},(_,i)=>pool[(offset+i)%pool.length]);
+}
+function createTile(it,angle){
+  const el=document.createElement('button');
+  const isText=it.kind==='scene'||it.kind==='challenge';
+  el.type='button';
+  el.className='tile'+(it.kind==='space'?' round':'')+(isText?' txt':'');
+  el.dataset.kind=it.kind;el.dataset.key=key(it);
+  el.title=it.item.name;
+  el.setAttribute('aria-label','加入'+it.item.name);
+  el.style.setProperty('--rot',angle+'deg');
+  el.innerHTML=tileHTML(it);
+  attachDrag(el,it);
+  return el;
+}
+function drawCanvas(){
+  const {clientWidth:width,clientHeight:height}=canvasEl(), {x,y,zoom}=camera;
+  const spanX=Math.max(width,720),spanY=Math.max(height,540);
+  const extent=width+'/'+height, resized=extent!==worldExtent;
+  worldExtent=extent;
+  const keep=new Set();
+  const left=-x/zoom-88, top=-y/zoom-88, right=(width-x)/zoom+88, bottom=(height-y)/zoom+88;
+  const shift=(spanX-width)/2;
+  for(let row=Math.floor(top/spanY);row<=Math.floor(bottom/spanY);row++){
+    for(let col=Math.floor((left+shift)/spanX);col<=Math.floor((right+shift)/spanX);col++){
+      for(const kind of Object.keys(placements)){
+        if(!state.filters[kind])continue;
+        const items=areaItems(kind,col,row);
+        items.forEach((it,i)=>{
+          const roam=(col||row)&&(kind==='space'||kind==='earth')&&i<2;
+          const slot=roam?roamingSlots[i+(kind==='earth'?2:0)]:placements[kind][i];
+          const [px,py,w,h,angle]=slot;
+          const stagger=col||row?(Math.abs(col*17+row*23+i*11)%55)-27:0;
+          const centerX=col*spanX+(px+stagger)*spanX/1586-shift;
+          const centerY=row*spanY+(py+stagger*.7)*spanY/992;
+          const tileWidth=w*spanX/1586, tileHeight=h*spanY/992;
+          if(centerX+tileWidth/2<left||centerX-tileWidth/2>right||centerY+tileHeight/2<top||centerY-tileHeight/2>bottom)return;
+          const id=`${row}/${col}/${kind}/${i}`;
+          keep.add(id);
+          let el=mounted.get(id);
+          if(!el){
+            el=createTile(it,angle);
+            mounted.set(id,el);
+            world.appendChild(el);
+            el.dataset.newTile='';
+          }
+          if(resized||'newTile' in el.dataset){
+            delete el.dataset.newTile;
+            el.style.left=centerX-tileWidth/2+'px';
+            el.style.top=centerY-tileHeight/2+'px';
+            el.style.setProperty('--width',tileWidth+'px');
+            el.style.setProperty('--height',tileHeight+'px');
+          }
+          el.classList.toggle('inpot',inPot(it.kind,it.item.id));
+        });
+      }
+    }
+  }
+  for(const [id,el] of mounted){
+    if(!keep.has(id)&&el!==drag?.el){el.remove();mounted.delete(id);}
+  }
+  world.style.transform=`translate3d(${x}px,${y}px,0) scale(${zoom})`;
+  $('#zoomValue').textContent=Math.round(zoom*100)+'%';
+}
+function applyFilters(){drawCanvas();}
+function requestCanvas(){
+  if(paintFrame)return;
+  paintFrame=requestAnimationFrame(()=>{paintFrame=0;drawCanvas();});
+}
 function renderCanvas(initial=false){
-  const cv=canvasEl();cv.innerHTML='';
-  CURRENT=samplePool(initial);
-  const counts={space:0,earth:0,scene:0,challenge:0};
-  CURRENT.forEach(it=>{
-    const el=document.createElement('button');
-    el.type='button';
-    const isText=it.kind==='scene'||it.kind==='challenge';
-    const [x,y,w,h,angle,circle]=placements[it.kind][counts[it.kind]++];
-    el.className='tile'+(circle?' round':'')+(isText?' txt':'');
-    el.dataset.kind=it.kind;el.dataset.key=key(it);
-    el.title=it.item.name;
-    el.setAttribute('aria-label','加入'+it.item.name);
-    el.style.setProperty('--width',w/1586*100+'vw');
-    el.style.setProperty('--height',h/992*100+'%');
-    el.style.setProperty('--rot',angle+'deg');
-    el.style.left=(x-w/2)/1586*100+'%';
-    el.style.top=(y-h/2)/992*100+'%';
-    el.innerHTML=tileHTML(it);
-    if(inPot(it.kind,it.item.id))el.classList.add('inpot');
-    attachDrag(el,it);
-    cv.appendChild(el);
-  });
-  applyFilters();
+  if(!initial)camera.batch++;
+  world.replaceChildren();
+  mounted.clear();
+  drawCanvas();
 }
-
-function applyFilters(){
-  $$('.tile',canvasEl()).forEach(el=>{
-    const on=state.filters[el.dataset.kind];
-    el.classList.toggle('hidden',!on);
+function zoomCanvas(factor,x=innerWidth/2,y=innerHeight/2){
+  const zoom=Math.min(2.6,Math.max(.65,camera.zoom*factor));
+  const ratio=zoom/camera.zoom;
+  camera.x=x-(x-camera.x)*ratio;
+  camera.y=y-(y-camera.y)*ratio;
+  camera.zoom=zoom;
+  requestCanvas();
+}
+function wireCanvas(){
+  const app=$('#app');
+  let space=false,pan=null;
+  const touches=new Map();
+  function pinch(){
+    if(touches.size!==2)return null;
+    const [a,b]=[...touches.values()];
+    return {x:(a.x+b.x)/2,y:(a.y+b.y)/2,d:Math.hypot(a.x-b.x,a.y-b.y)};
+  }
+  app.addEventListener('wheel',e=>{
+    e.preventDefault();
+    const unit=e.deltaMode===1?16:e.deltaMode===2?innerHeight:1;
+    if(e.ctrlKey||e.metaKey)zoomCanvas(Math.exp(-e.deltaY*unit*.003),e.clientX,e.clientY);
+    else{
+      camera.x-=(e.shiftKey&&!e.deltaX?e.deltaY:e.deltaX)*unit;
+      camera.y-=(e.shiftKey?0:e.deltaY)*unit;
+      requestCanvas();
+    }
+  },{passive:false});
+  window.addEventListener('keydown',e=>{
+    if(e.code!=='Space'||e.target.closest('button,input,textarea,[contenteditable]')||$('.modal.show,.results.show'))return;
+    e.preventDefault();space=true;app.classList.add('pan-mode');
   });
+  const releaseSpace=()=>{space=false;app.classList.remove('pan-mode');};
+  window.addEventListener('keyup',e=>{if(e.code==='Space')releaseSpace();});
+  window.addEventListener('blur',()=>{releaseSpace();pan=null;touches.clear();app.classList.remove('panning');});
+  app.addEventListener('pointerdown',e=>{
+    if(e.pointerType==='touch')touches.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(touches.size===2){
+      app.classList.remove('panning');
+      app.setPointerCapture(e.pointerId);
+      e.stopPropagation();
+      if(drag){drag.el.dispatchEvent(new PointerEvent('pointercancel',{pointerId:drag.pid}));}
+      pan=null;
+      return;
+    }
+    if(e.button!==1&&(e.button!==0||(!space&&e.target.closest('button,.topbar,.sidefx,.cookdock'))))return;
+    e.preventDefault();
+    e.stopPropagation();
+    app.setPointerCapture(e.pointerId);
+    pan={id:e.pointerId,x:e.clientX,y:e.clientY};
+    app.classList.add('panning');
+  },true);
+  app.addEventListener('pointermove',e=>{
+    if(touches.has(e.pointerId)){
+      const before=pinch();
+      touches.set(e.pointerId,{x:e.clientX,y:e.clientY});
+      const after=pinch();
+      if(before&&after&&before.d){
+        camera.x+=after.x-before.x;camera.y+=after.y-before.y;
+        zoomCanvas(after.d/before.d,after.x,after.y);
+        return;
+      }
+    }
+    if(!pan||pan.id!==e.pointerId)return;
+    camera.x+=e.clientX-pan.x;camera.y+=e.clientY-pan.y;
+    pan.x=e.clientX;pan.y=e.clientY;
+    requestCanvas();
+  });
+  function end(e){
+    touches.delete(e.pointerId);
+    if(pan?.id!==e.pointerId)return;
+    pan=null;app.classList.remove('panning');
+  }
+  app.addEventListener('pointerup',end,true);
+  app.addEventListener('pointercancel',end,true);
+  $('#zoomIn').onclick=()=>zoomCanvas(1.2);
+  $('#zoomOut').onclick=()=>zoomCanvas(1/1.2);
+  $('#zoomValue').onclick=()=>{Object.assign(camera,{x:0,y:0,zoom:1});requestCanvas();};
 }
 
 /* ---------- drag to center ---------- */
@@ -158,11 +281,11 @@ function attachDrag(el,it){
     $('#catcher').classList.remove('over');
     if(e.type==='pointercancel'){drag=null;return;}
     if(drag.started && overForge(e.clientX,e.clientY)){
-      addToPot(it);
+      addToPot(it,{x:e.clientX,y:e.clientY});
       el.classList.add('inpot');
     }else if(!drag.started){
       // treat as tap: on mobile a tap also drops into the pot
-      addToPot(it); el.classList.add('inpot');
+      addToPot(it,{x:e.clientX,y:e.clientY}); el.classList.add('inpot');
     }
     drag=null;
   };
@@ -186,17 +309,17 @@ function moveGhost(x,y,silent){
 }
 
 /* ---------- pot / cluster ---------- */
-function addToPot(it){
+function addToPot(it,origin){
   if(inPot(it.kind,it.item.id))return;
   state.pot.push(it);
-  renderCluster(true);
+  requestCanvas();
+  renderCluster(true,origin);
   refreshCook();
 }
 function removeFromPot(k,id){
   state.pot=state.pot.filter(p=>!(p.kind===k&&p.item.id===id));
   // un-hide its canvas tile if present
-  const t=$(`.tile[data-key="${k}:${id}"]`,canvasEl());
-  if(t)t.classList.remove('inpot');
+  requestCanvas();
   renderCluster();
   refreshCook();
 }
@@ -206,12 +329,12 @@ function clearPot(){
   renderCluster();refreshCook();
 }
 
-function renderCluster(justAdded){
+function renderCluster(justAdded,origin){
   const cl=$('#cluster'),stage=$('#stage');
   cl.innerHTML='';
   const n=state.pot.length;
   stage.classList.toggle('has',n>0);
-  const clusterSize=stage.offsetWidth;
+  const {width:clusterSize,left,top}=stage.getBoundingClientRect();
   const featuredPositions=[[0,-.34,-12],[-.24,.13,9],[.22,.08,-15]];
   state.pot.forEach((p,i)=>{
     const el=document.createElement('button');
@@ -229,8 +352,14 @@ function renderCluster(justAdded){
     el.style.transform=`translate(${dx}px,${dy}px) rotate(${rot}deg)`;
     el.style.zIndex=20+i;
     if(justAdded&&i===n-1&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
-      el.animate([{transform:`translate(${dx}px,${dy-18}px) scale(.82) rotate(${rot}deg)`,opacity:0},
-        {transform:el.style.transform,opacity:1}],{duration:280,easing:'cubic-bezier(.2,.8,.25,1)'});
+      const sx=origin?origin.x-left-clusterSize/2:dx;
+      const sy=origin?origin.y-top-clusterSize/2:dy-18;
+      el.animate([
+        {transform:`translate(${sx}px,${sy}px) scale(.87) rotate(0deg)`,opacity:origin?1:.4},
+        {transform:`translate(${dx}px,${dy+5}px) scale(1.045) rotate(${rot+2}deg)`,opacity:1,offset:.77},
+        {transform:el.style.transform,opacity:1}
+      ],{duration:300,easing:'cubic-bezier(.19,.79,.25,1)'});
+
     }
     cl.appendChild(el);
   });
@@ -311,62 +440,163 @@ async function cook(){
     try{ideas=await aiGenerate(recipe,k);used='ai';}catch(e){console.warn('AI failed',e);}
   }
   if(!ideas)ideas=localGenerate(recipe);
-
-  renderRecipeLine(recipe,used);
-  await renderNotes(ideas);
+  state._seed=null;
 
   state.cooking=false;btn.classList.remove('cooking');refreshCook();
+  latestBatch={ideas:ideas.map((idea,i)=>({...idea,recipe,id:globalThis.crypto?.randomUUID?.()||Date.now()+'-'+i})),recipe,used};
+  if($('#results').classList.contains('show'))showDeck('latest',true);
+  $('#openDeck').textContent='灵感册 · '+latestBatch.ideas.length;
 }
 
-function openResults(){$('#results').classList.add('show');}
-function closeResults(){$('#results').classList.remove('show');}
+let latestBatch=null, deckMode='latest', activeIdea=0, deckDrag=null;
+let savedIdeas=[];
+try{const saved=JSON.parse(localStorage.getItem('sc-saved-ideas-v1')||'[]');if(Array.isArray(saved))savedIdeas=saved;}catch{}
+let lastFocus;
+const reduceMotion=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
+const deckIdeas=()=>deckMode==='saved'?savedIdeas:latestBatch?.ideas||[];
+function openResults(){
+  const results=$('#results');
+  if(results.classList.contains('show'))return;
+  lastFocus=document.activeElement;
+  results.classList.add('show');
+  $('#app').inert=true;
+  $('#rclose').focus({preventScroll:true});
+}
+function closeResults(){
+  $('#results').classList.remove('show');
+  $('#app').inert=false;
+  const target=lastFocus?.disabled?$('#openDeck'):lastFocus;
+  target?.focus({preventScroll:true});
+}
 function showLoading(){
-  $('#noteGrid').innerHTML=`<div class="loading">
-    <div class="orbit"><i></i><i></i><i></i></div>
-    <div class="lt">正在熔炉里炖这一锅……<br>把太空的物理规则和地球的好点子揉成新物种</div></div>`;
-  $('#recipeLine').innerHTML='';
+  $('#noteGrid').innerHTML='<div class="loading" role="status"><span class="stir-loader"></span>正在翻拌线索…</div>';
+  $('#recipeLine').textContent='';
+  $('#deckControls').hidden=true;
+  $('.result-tabs').hidden=true;
+  $('.resbtns').hidden=true;
 }
 
 function ingrChip(p){
-  const cls={space:'s-sig',earth:'s-ert',scene:'s-scn',challenge:'s-chl'}[p.kind];
-  const mk={space:'✦',earth:'◆',scene:'场景',challenge:'挑战'}[p.kind];
-  return `<span class="ingr ${cls}">${mk} ${esc(p.item.name)}</span>`;
+  const [mark,label]=category[p.kind];
+  return `<span class="ingr" data-kind="${p.kind}" title="${label}">${mark} ${esc(p.item.name)}</span>`;
 }
-function renderRecipeLine(recipe,used){
-  const tag=used==='ai'?'<b style="color:var(--blue)">DeepSeek 现炖</b>':'<b>灵感引擎现炖</b>';
-  $('#recipeLine').innerHTML=`本次配方 · ${tag} &nbsp; ${recipe.map(ingrChip).join('')} <span style="color:var(--mute)">→ 太空旅馆新物种</span>`;
+function showDeck(mode=deckMode,fromPan=false){
+  deckMode=mode;
+  $('.result-tabs').hidden=false;
+  $('.resbtns').hidden=false;
+  $('#showLatest').setAttribute('aria-pressed',String(mode==='latest'));
+  $('#showSaved').setAttribute('aria-pressed',String(mode==='saved'));
+  $('#showLatest').disabled=!latestBatch;
+  $('#showSaved').textContent='已收藏'+(savedIdeas.length?' · '+savedIdeas.length:'');
+  const recipe=mode==='latest'?latestBatch?.recipe:null;
+  $('#recipeLine').innerHTML=recipe?`<span>${latestBatch.used==='ai'?'DeepSeek':'灵感引擎'}</span>${recipe.map(ingrChip).join('')}`:'';
+  activeIdea=0;
+  paintDeck(0,fromPan);
 }
-
-async function renderNotes(ideas){
-  const grid=$('#noteGrid');grid.innerHTML='';
-  ideas.forEach((idea,i)=>{
-    const note=document.createElement('div');note.className='note';
-    const tags=(idea.tags||[]).slice(0,4).map(t=>`<span>${esc(t)}</span>`).join('');
-    const moment=idea.moment?`<div class="moment"><span class="ml">接住的关键时刻</span>${esc(idea.moment)}</div>`:'';
-    note.innerHTML=`<span class="num">IDEA ${String(i+1).padStart(2,'0')}</span>
-      <span class="remix" title="把它丢回锅里再炖">↻</span>
+function paintDeck(direction=0,fromPan=false){
+  const ideas=deckIdeas(), grid=$('#noteGrid');
+  $('#deckControls').hidden=ideas.length<2;
+  $('#ideaCount').textContent=`${String(activeIdea+1).padStart(2,'0')} / ${String(ideas.length).padStart(2,'0')}`;
+  $('#againBtn').disabled=state.cooking||!canCook();
+  if(!ideas.length){
+    grid.innerHTML='<p class="empty-deck">收藏一张灵感后，它会留在这里。</p>';
+    return;
+  }
+  const idea=ideas[activeIdea],isSaved=savedIdeas.some(item=>item.id===idea.id);
+  const value=esc(idea.value||'').replaceAll('&lt;b&gt;','<b>').replaceAll('&lt;/b&gt;','</b>');
+  const tags=(idea.tags||[]).slice(0,4).map(t=>`<span>${esc(t)}</span>`).join('');
+  const title=i=>ideas[(activeIdea+i+ideas.length)%ideas.length]?.title||'';
+  grid.innerHTML=`
+    ${ideas.length>1?`<button class="deck-peek before" data-deck-step="-1" aria-label="上一张灵感"><small>←</small><span>${esc(title(-1))}</span></button><button class="deck-peek after" data-deck-step="1" aria-label="下一张灵感"><small>→</small><span>${esc(title(1))}</span></button>`:''}
+    <article class="note deck-card">
+      <header><span class="num">灵感 / ${String(activeIdea+1).padStart(2,'0')}</span><button class="save-idea" aria-pressed="${isSaved}">${isSaved?'✓ 已收藏':'＋ 收藏'}</button></header>
       <h3>${esc(idea.title)}</h3>
-      <div class="value">${idea.value||''}</div>
-      ${moment}
-      <div class="tags">${tags}</div>`;
-    note.querySelector('.remix').onclick=()=>remix(idea);
-    grid.appendChild(note);
-    // popcorn pop-in
-    setTimeout(()=>{
-      note.style.opacity='0';
-      note.animate([
-        {transform:'translateY(26px) scale(.9) rotate('+rnd(-3,3)+'deg)',opacity:0},
-        {transform:'translateY(-6px) scale(1.02)',opacity:1,offset:.7},
-        {transform:'translateY(0) scale(1) rotate(0)',opacity:1}
-      ],{duration:560,easing:'cubic-bezier(.34,1.56,.64,1)',fill:'forwards'});
-    },i*130);
+      <div class="value">${value}</div>
+      ${idea.moment?`<div class="moment"><span class="ml">使用时刻</span>${esc(idea.moment)}</div>`:''}
+      <div class="tags">${tags}</div>
+      <footer><button class="recook-idea" ${state.cooking||(!canCook()&&!idea.recipe?.length)?'disabled':''}>↻ 回锅再想</button></footer>
+    </article>`;
+  const card=$('.deck-card',grid);
+  if((direction||fromPan)&&!reduceMotion()){
+    const rect=card.getBoundingClientRect(), pan=forgeRect();
+    const x=fromPan?pan.x+pan.width/2-rect.x-rect.width/2:direction*56;
+    const y=fromPan?pan.y+pan.height/2-rect.y-rect.height/2:0;
+    card.animate([
+      {transform:`translate(${x}px,${y}px) scale(${fromPan ? .28 : .94}) rotate(${fromPan?-13:direction*4}deg)`,opacity:.18},
+      {transform:fromPan?'translateY(-10px) scale(1.015) rotate(1.5deg)':'translateX(-3px)',opacity:1,offset:.79},
+      {transform:'none',opacity:1}
+    ],{duration:fromPan?640:310,easing:'cubic-bezier(.19,.82,.26,1)'});
+    if(fromPan)$$('.deck-peek',grid).forEach((peek,i)=>peek.animate([
+      {transform:'scale(.85) translateY(32px)',opacity:0},{transform:getComputedStyle(peek).transform,opacity:1}
+    ],{duration:470,delay:100+70*i,easing:'cubic-bezier(.19,.82,.26,1)',fill:'backwards'}));
+  }
+}
+function advanceDeck(step){
+  const length=deckIdeas().length;
+  if(length<2)return;
+  activeIdea=(activeIdea+step+length)%length;
+  paintDeck(step);
+}
+function wireDeck(){
+  $('#openDeck').onclick=()=>{if(state.cooking)return;openResults();showDeck(latestBatch?'latest':'saved');};
+  $('#showLatest').onclick=()=>showDeck('latest');
+  $('#showSaved').onclick=()=>showDeck('saved');
+  $('#prevIdea').onclick=()=>advanceDeck(-1);
+  $('#nextIdea').onclick=()=>advanceDeck(1);
+  const grid=$('#noteGrid');
+  grid.addEventListener('click',e=>{
+    const step=e.target.closest('[data-deck-step]');
+    if(step){advanceDeck(Number(step.dataset.deckStep));$('#nextIdea').focus();return;}
+    const idea=deckIdeas()[activeIdea];
+    if(!idea)return;
+    if(e.target.closest('.recook-idea')){remix(idea);return;}
+    if(!e.target.closest('.save-idea'))return;
+    if(savedIdeas.some(item=>item.id===idea.id))savedIdeas=savedIdeas.filter(item=>item.id!==idea.id);
+    else savedIdeas=[...savedIdeas,idea];
+    try{localStorage.setItem('sc-saved-ideas-v1',JSON.stringify(savedIdeas));}catch{}
+    $('#showSaved').textContent='已收藏'+(savedIdeas.length?' · '+savedIdeas.length:'');
+    activeIdea=Math.min(activeIdea,Math.max(0,deckIdeas().length-1));
+    paintDeck();
+    $('.save-idea',grid)?.focus();
+  });
+  grid.addEventListener('pointerdown',e=>{
+    if(e.button!==0||e.target.closest('button')||deckIdeas().length<2)return;
+    const card=e.target.closest('.deck-card');
+    if(!card)return;
+    deckDrag={id:e.pointerId,x:e.clientX,dx:0,card};
+    grid.setPointerCapture(e.pointerId);
+  });
+  grid.addEventListener('pointermove',e=>{
+    if(deckDrag?.id!==e.pointerId)return;
+    deckDrag.dx=e.clientX-deckDrag.x;
+    if(!reduceMotion())deckDrag.card.style.transform=`translateX(${deckDrag.dx*.67}px) rotate(${Math.max(-8,Math.min(8,deckDrag.dx*.035))}deg)`;
+  });
+  const end=e=>{
+    if(deckDrag?.id!==e.pointerId)return;
+    const {dx,card}=deckDrag;
+    deckDrag=null;
+    if(e.type!=='pointercancel'&&Math.abs(dx)>43)advanceDeck(dx<0?1:-1);
+    else{
+      if(!reduceMotion())card.animate([{transform:card.style.transform},{transform:'none'}],{duration:210,easing:'ease-out'});
+      card.style.transform='';
+    }
+  };
+  grid.addEventListener('pointerup',end);
+  grid.addEventListener('pointercancel',end);
+  $('#results').addEventListener('keydown',e=>{
+    if(e.key==='ArrowLeft'||e.key==='ArrowRight'){
+      e.preventDefault();advanceDeck(e.key==='ArrowLeft'?-1:1);
+    }
   });
 }
 
 /* remix: drop this idea back into the pot as a new 'inspiration' seed */
 function remix(idea){
   closeResults();
-  // keep current pot, just re-cook for a fresh batch, seeded by the idea title
+  if(idea.recipe?.length){
+    state.pot=[...idea.recipe];
+    requestCanvas();renderCluster();refreshCook();
+  }
   state._seed=idea.title;
   setTimeout(()=>cook(),380);
 }
@@ -392,7 +622,7 @@ async function aiGenerate(recipe,apiKey){
 "tags"：3-4 个关键词数组
 只返回 JSON，不要任何解释或 markdown 代码块。`;
   const r=await fetch('https://api.deepseek.com/chat/completions',{
-    method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
+    method:'POST',signal:AbortSignal.timeout(22000),headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
     body:JSON.stringify({model:'deepseek-chat',temperature:1.1,messages:[{role:'system',content:sys},{role:'user',content:usr}]})
   });
   if(!r.ok)throw new Error('http '+r.status);
@@ -400,8 +630,13 @@ async function aiGenerate(recipe,apiKey){
   let txt=j.choices[0].message.content.trim();
   txt=txt.replace(/^```(json)?/i,'').replace(/```$/,'').trim();
   const arr=JSON.parse(txt);
-  state._seed=null;
-  return arr.slice(0,4);
+  if(!Array.isArray(arr))throw Error('Invalid idea payload');
+  const ideas=arr.filter(item=>typeof item?.title==='string'&&typeof item.value==='string').slice(0,4).map(item=>({
+    title:item.title,value:item.value,moment:typeof item.moment==='string'?item.moment:'',
+    tags:Array.isArray(item.tags)?item.tags.filter(tag=>typeof tag==='string'):[]
+  }));
+  if(!ideas.length)throw Error('No usable ideas');
+  return ideas;
 }
 
 /* ---------- local fallback idea engine ---------- */
@@ -445,7 +680,13 @@ function localGenerate(recipe){
     },
   ];
   // shuffle lightly so remix feels different
-  return stems.sort(()=>Math.random()-0.5).slice(0,4);
+  const ideas=stems.sort(()=>Math.random()-0.5).slice(0,4);
+  if(state._seed){
+    ideas[0]={...ideas[0],title:'换个时刻 · '+E.name,
+      value:`沿着「${b(state._seed)}」再走一步：把同一组合挪到${b('离舱前最后五分钟')}，让旅客决定哪段体验要留在舱内、哪段想带回地球。`,
+      moment:'做两张纸面流程卡，让同学选取一段记忆并解释选择。'};
+  }
+  return ideas;
 }
 
 /* ---------- decorative blue arc arrow (ref: 从锅内弯向右上飞出) ---------- */
@@ -455,9 +696,11 @@ function closeModal(id){$('#'+id).classList.remove('show');}
 
 function wire(){
   wireFilters();
+  wireCanvas();
+  wireDeck();
   $('#cookBtn').onclick=cook;
   $('#diceBtn').onclick=luckyFill;
-  $('#shuffleBtn').onclick=()=>{renderCanvas();/* keep pot intact */ state.pot.forEach(p=>{const t=$(`.tile[data-key="${key(p)}"]`,canvasEl());if(t)t.classList.add('inpot');});};
+  $('#shuffleBtn').onclick=()=>{if(!drag)renderCanvas();};
   $('#rclose').onclick=closeResults;
   $('#againBtn').onclick=()=>{closeResults();setTimeout(cook,300);};
   $('#clearBtn').onclick=()=>{closeResults();clearPot();};
@@ -471,13 +714,13 @@ function wire(){
   $('#howClose').onclick=()=>closeModal('howModal');
   $$('.modal').forEach(m=>m.onclick=e=>{if(e.target===m)m.classList.remove('show');});
   document.addEventListener('keydown',e=>{
-    if(e.key==='Escape'){$$('.modal.show,.results.show').forEach(x=>x.classList.remove('show'));}
+    if(e.key==='Escape'){const modal=$('.modal.show');if(modal)modal.classList.remove('show');else if($('.results.show'))closeResults();}
   });
 
   let resizeFrame;
   window.addEventListener('resize',()=>{
     cancelAnimationFrame(resizeFrame);
-    resizeFrame=requestAnimationFrame(()=>renderCluster());
+    resizeFrame=requestAnimationFrame(()=>{renderCluster();requestCanvas();});
   });
 }
 
@@ -488,7 +731,7 @@ function boot(){
   const items=allItems();
   state.pot=starters.map(id=>items.find(it=>it.item.id===id)).filter(Boolean);
   for(const item of state.pot){
-    canvasEl().querySelector(`[data-key="${key(item)}"]`)?.classList.add('inpot');
+    $$(`[data-key="${key(item)}"]`,canvasEl()).forEach(el=>el.classList.add('inpot'));
   }
   renderCluster();
   refreshCook();

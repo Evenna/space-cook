@@ -104,7 +104,7 @@
 .tagc{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:700}
 .tagc.sig{background:var(--blue-soft);color:var(--blue)}.tagc.scn{background:#dff3ec;color:var(--scene)}.tagc.chl{background:#fdebe3;color:var(--chal)}
 </style>
-<link rel="stylesheet" href="forge.css?v=1">
+<link rel="stylesheet" href="forge.css?v=2">
 </head>
 <body>
 <div id="app">
@@ -151,18 +151,31 @@
   <div class="cookdock">
     <button class="cookbtn" id="cookBtn" disabled>Cooking <span class="arr" aria-hidden="true">↗</span></button>
     <div class="cookhint" id="cookHint" aria-live="polite">已选 0 条线索</div>
-    <button class="dice" id="diceBtn">手气模式</button>
+    <div class="cook-links"><button class="dice" id="diceBtn">手气模式</button><button class="dice" id="openDeck">灵感册</button></div>
   </div>
 
+  <div class="canvas-tools" aria-label="画布缩放">
+    <button id="zoomOut" aria-label="缩小画布">−</button>
+    <button id="zoomValue" title="回到初始位置">100%</button>
+    <button id="zoomIn" aria-label="放大画布">＋</button>
+  </div>
+  <div class="canvas-gesture">拖空白移动 · Ctrl / ⌘ + 滚轮缩放</div>
   <div id="ghost"><img alt=""></div>
 </div>
 
 <!-- results -->
-<div class="results" id="results">
+<div class="results" id="results" role="dialog" aria-modal="true" aria-labelledby="resultsTitle">
   <div class="rsheet">
-    <div class="rhead"><span class="bar"></span><h2>脑暴出的新物种</h2><span class="rclose" id="rclose">✕ 回到厨房</span></div>
+    <div class="rhead"><span class="bar"></span><h2 id="resultsTitle">灵感出锅</h2><button class="rclose" id="rclose">✕ 回到厨房</button></div>
     <div class="recipe" id="recipeLine"></div>
+    <div class="result-tabs" aria-label="灵感视图">
+      <button id="showLatest" aria-pressed="true">本轮灵感</button>
+      <button id="showSaved" aria-pressed="false">已收藏</button>
+    </div>
     <div class="notes" id="noteGrid"></div>
+    <div class="deck-controls" id="deckControls" hidden>
+      <button id="prevIdea" aria-label="上一张">←</button><span id="ideaCount" aria-live="polite"></span><button id="nextIdea" aria-label="下一张">→</button>
+    </div>
     <div class="resbtns">
       <button class="again" id="againBtn">✦ 再脑暴一批</button>
       <button class="clearall" id="clearBtn">清空重选</button>
@@ -188,13 +201,13 @@
     <li><b class="tagc scn">场景</b> 太空旅客的真实时刻（可选 · 让 idea 有血有肉）</li>
     <li><b class="tagc chl">挑战</b> 要破解的太空硬约束（可选 · 让 idea 有锋芒）</li>
   </ol>
-  <p class="mini">① 把食材<b>拖进中心</b>（电脑拖、手机点都行）&nbsp;② 不想选点 <b>🎲手气模式</b> 随机抓一把<br>③ 点 <span class="kbd">Cooking</span> 点火 &nbsp;④ 蹦出带「产品名+一句话价值+接住哪个时刻」的便利贴<br>⑤ 喜欢哪条？点 <b>↻</b> 把它丢回锅里再炖，灵感滚雪球</p>
+  <p class="mini">① 把线索<b>拖进锅里</b>，也可以直接点选&nbsp;② 不想选点 <b>🎲手气模式</b> 随机抓一把<br>③ 点 <span class="kbd">Cooking</span> 点火 &nbsp;④ 蹦出带「产品名+一句话价值+接住哪个时刻」的便利贴<br>⑤ 左右滑动浏览灵感，收藏或回锅再做一轮</p>
   <div class="row" style="margin-top:18px"><button class="primary" id="howClose">开始下厨</button></div>
 </div></div>
 
 <script src="data.js?v=20261117"></script>
 <script src="spice.js"></script>
 <script src="photos.js"></script>
-<script src="app.js?v=20261117"></script>
+<script src="app.js?v=20261117-2"></script>
 </body>
 </html>
