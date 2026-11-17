@@ -104,7 +104,7 @@
 .tagc{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:700}
 .tagc.sig{background:var(--blue-soft);color:var(--blue)}.tagc.scn{background:#dff3ec;color:var(--scene)}.tagc.chl{background:#fdebe3;color:var(--chal)}
 </style>
-<link rel="stylesheet" href="forge.css?v=2">
+<link rel="stylesheet" href="forge.css?v=3">
 </head>
 <body>
 <div id="app">
@@ -114,18 +114,9 @@
     <nav class="controls" aria-label="页面操作">
       <button class="tbtn" id="howBtn">玩法</button><span aria-hidden="true">·</span>
       <button class="tbtn" id="keyBtn">AI 设置</button><span aria-hidden="true">·</span>
-      <button class="tbtn" id="shuffleBtn">换一批</button>
+      <button class="tbtn" id="shuffleBtn">更多线索</button>
     </nav>
   </header>
-
-  <div class="sidefx left" aria-label="太空素材筛选">
-    <button class="fxpill on" data-kind="space" aria-pressed="true"><i aria-hidden="true">◎</i>太空信号</button>
-    <button class="fxpill on" data-kind="scene" aria-pressed="true"><i aria-hidden="true">◇</i>场景</button>
-  </div>
-  <div class="sidefx right" aria-label="地球素材筛选">
-    <button class="fxpill on" data-kind="earth" aria-pressed="true"><i aria-hidden="true">⊕</i>地球同款</button>
-    <button class="fxpill on" data-kind="challenge" aria-pressed="true"><i aria-hidden="true">△</i>挑战</button>
-  </div>
 
   <div id="canvas" aria-label="素材画布"></div>
 
@@ -154,14 +145,25 @@
     <div class="cook-links"><button class="dice" id="diceBtn">手气模式</button><button class="dice" id="openDeck">灵感册</button></div>
   </div>
 
+  <nav class="zone-nav" aria-label="定位到素材区域">
+    <button data-zone-jump="space"><span>✧</span>太空变化</button>
+    <button data-zone-jump="earth"><span>◆</span>地球借法</button>
+    <button data-zone-jump="scene"><span>≋</span>旅客时刻</button>
+    <button data-zone-jump="challenge"><span>△</span>设计限制</button>
+  </nav>
   <div class="canvas-tools" aria-label="画布缩放">
     <button id="zoomOut" aria-label="缩小画布">−</button>
     <button id="zoomValue" title="回到初始位置">100%</button>
     <button id="zoomIn" aria-label="放大画布">＋</button>
   </div>
-  <div class="canvas-gesture">拖空白移动 · Ctrl / ⌘ + 滚轮缩放</div>
+  <div class="canvas-gesture">自由浏览 · 拖线索入锅</div>
   <div id="ghost"><img alt=""></div>
 </div>
+
+<dialog id="clueDialog" class="clue-dialog" aria-labelledby="clueTitle">
+  <button class="clue-close" id="closeClue" aria-label="关闭线索详情">×</button>
+  <div id="clueBody"></div>
+</dialog>
 
 <!-- results -->
 <div class="results" id="results" role="dialog" aria-modal="true" aria-labelledby="resultsTitle">
@@ -201,13 +203,14 @@
     <li><b class="tagc scn">场景</b> 太空旅客的真实时刻（可选 · 让 idea 有血有肉）</li>
     <li><b class="tagc chl">挑战</b> 要破解的太空硬约束（可选 · 让 idea 有锋芒）</li>
   </ol>
-  <p class="mini">① 把线索<b>拖进锅里</b>，也可以直接点选&nbsp;② 不想选点 <b>🎲手气模式</b> 随机抓一把<br>③ 点 <span class="kbd">Cooking</span> 点火 &nbsp;④ 蹦出带「产品名+一句话价值+接住哪个时刻」的便利贴<br>⑤ 左右滑动浏览灵感，收藏或回锅再做一轮</p>
+  <p class="mini">① 把线索<b>拖进锅里</b>，或点开线索详情再加入&nbsp;② 不想选点 <b>🎲手气模式</b> 随机抓一把<br>③ 点 <span class="kbd">Cooking</span> 点火 &nbsp;④ 蹦出带「产品名+一句话价值+接住哪个时刻」的便利贴<br>⑤ 左右滑动浏览灵感，收藏或回锅再做一轮</p>
   <div class="row" style="margin-top:18px"><button class="primary" id="howClose">开始下厨</button></div>
 </div></div>
 
 <script src="data.js?v=20261117"></script>
 <script src="spice.js"></script>
 <script src="photos.js"></script>
-<script src="app.js?v=20261117-2"></script>
+<script src="design-map.js?v=1"></script>
+<script src="app.js?v=20261117-3"></script>
 </body>
 </html>

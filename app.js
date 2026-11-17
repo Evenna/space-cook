@@ -10,7 +10,7 @@ const pick=a=>a[Math.floor(Math.random()*a.length)];
 const rnd=(a,b)=>a+Math.random()*(b-a);
 
 /* pot holds any number of ingredients, each {kind,item} */
-const state={pot:[],cooking:false,filters:{space:true,earth:true,scene:true,challenge:true}};
+const state={pot:[],cooking:false};
 
 const featuredPhotos={
   'IE-31':'porthole','IE-11':'launch','IE-19':'lunar','IE-17':'station','IE-20':'habitat',
@@ -35,119 +35,103 @@ function allItems(){
 const inPot=(kind,id)=>state.pot.some(p=>p.kind===kind&&p.item.id===id);
 const key=it=>it.kind+':'+it.item.id;
 
-/* Coordinates refer to the supplied artboard. They are stable when the batch changes. */
 const canvasEl=()=>$('#canvas');
-const placements={
-  space:[
-    [-18,172,214,214,0,1],[219,187,126,130,-5,1],[405,140,98,98,0,1],
-    [560,187,111,115,0,1],[695,133,87,90,0,1],[149,313,99,100,2,1],
-    [282,381,119,120,0,1],[432,406,112,114,8,1],[478,290,80,79,0,1],
-    [225,510,120,121,0,1],[349,535,99,103,-4,1],[462,588,107,109,-3,1],
-    [128,619,94,94,0,1],[270,665,147,91,4,0],[414,712,109,109,0,1],
-    [257,782,101,100,0,1],[119,834,78,78,0,1],[230,913,149,93,-10,0],
-    [394,869,115,117,0,1],[528,920,81,87,0,1],[-8,1010,264,264,0,1]
-  ],
-  earth:[
-    [925,162,103,114,-8],[1050,205,80,114,-6],[1171,138,112,109,11],
-    [1406,185,106,119,-7],[1548,183,102,148,-11],[1285,245,91,95,-6],
-    [1075,356,87,116,5],[1273,420,109,122,-8],[1080,611,114,115,3],
-    [1236,565,86,102,7],[1398,652,159,91,1],[1221,708,123,95,-8],
-    [1525,775,137,137,-11],[1068,746,118,86,-6],[1215,836,105,98,6],
-    [1080,883,112,111,-3],[1336,910,98,110,8],[1497,892,118,85,-15]
-  ],
-  scene:[[360,239,114,33,0],[112,724,137,33,0]],
-  challenge:[[1181,302,91,76,4],[1398,323,99,76,7],[1128,487,101,78,3],[1375,545,113,79,8],[1365,780,106,79,7]]
-};
-const featured={
-  space:['IE-18','IE-11','IE-19','IE-23','IE-22','IE-15','IE-05','IE-17','IE-08','IE-06','IE-01','IE-02','IE-12','IE-20','IE-09','IE-24','IE-07','IE-29','IE-25','IE-03','IE-04'],
-  earth:['HT-28','HT-10','HT-14','HT-32','HT-33','HT-21','HT-16','HT-20','HT-24','HT-30','HT-26','HT-23','HT-27','HT-01','HT-18','HT-06','HT-07','HT-29'],
-  scene:['SC-01','SC-10'],
-  challenge:['CH-01','CH-08','CH-02','CH-06','CH-09']
-};
-
-const category={
-  space:['✧','太空信号'],earth:['◆','地球同款'],scene:['≋','场景'],challenge:['△','挑战']
-};
-const roamingSlots=[
-  [707,335,103,92,-9],[807,494,131,110,6],[729,653,91,102,8],[846,780,118,85,-10]
-];
-const camera={x:0,y:0,zoom:1,batch:0};
+const category=Object.fromEntries(Object.entries(DESIGN_ZONES).map(([kind,zone])=>[kind,[zone.mark,zone.name]]));
+const clues=new Map(allItems().map(it=>[it.item.id,it]));
+const camera={x:0,y:0,zoom:1};
 const mounted=new Map();
-let worldExtent='';
 const world=document.createElement('div');
 world.className='material-world';
 canvasEl().appendChild(world);
-let paintFrame=0;
+let paintFrame=0, flight=0, batch=0;
 
+// Coordinates are relative to the fixed pan. Only the nearby part of the map is mounted.
+function buildMap(){
+  const nodes=[];
+  for(const [kind,zone] of Object.entries(DESIGN_ZONES)){
+    const {side,vertical}=zone;
+    const upper=vertical<0, photoGroup=kind==='space'||kind==='earth';
+    const origin={x:side*522,y:upper?-204:212};
+    nodes.push({id:'zone-'+kind,kind,x:origin.x,y:origin.y-(upper?128:146),w:408,h:52,zone});
+    zone.groups.forEach(([title,ids],group)=>{
+      const centerX=origin.x+(group-1)*132;
+      const all=ids.map(id=>clues.get(id)).filter(Boolean);
+      const count=photoGroup?3:2;
+      const labelY=origin.y-57+(group%2)*13;
+      nodes.push({id:kind+'/'+group,kind,x:centerX,y:labelY,w:118,h:24,label:title});
+      if(all.length>count)nodes.push({id:kind+'/'+group+'/more',kind,
+        x:origin.x+side*405,y:origin.y+(group-1)*102-36,w:102,h:24,label:title});
+      all.forEach((it,i)=>{
+        const photoTile=kind==='space'||kind==='earth';
+        const near=i<count;
+        const x=near?centerX+(photoTile?[-23,18,-14][i]:(i?8:-5)):
+          origin.x+side*(535+(i-count)*119);
+        const y=near?labelY+(photoTile?([68,132,190][i]+[0,12,-8][group]):(i?120:58)):
+          origin.y+(group-1)*102+((i+group)%2)*12;
+        const width=near?(photoTile?([91,76,54][i]+group*3):108):(photoTile?82:111);
+        const height=photoTile?(kind==='space'?width:width*.83):kind==='scene'?43:52;
+        nodes.push({id:it.item.id,kind,it,x,y,w:width,h:height,angle:photoTile?[-7,6,3,-4][(i+group)%4]:0});
+      });
+    });
+  }
+  return nodes;
+}
+const map=buildMap();
 function tileHTML(it){
   const {kind,item}=it;
   const badge=`<span class="tile-kind" aria-hidden="true">${category[kind][0]}</span>`;
-  if(kind==='scene'||kind==='challenge')return `${badge}<span>${esc(item.name)}</span><small>${category[kind][1]}</small>`;
-  const src=photo(kind,item,260);
-  return `${badge}<img src="${src}" alt="" draggable="false" referrerpolicy="no-referrer"><span class="tlabel">${esc(item.name)}</span>`;
+  if(kind==='scene'||kind==='challenge')return `${badge}<span>${esc(item.name)}</span>`;
+  return `${badge}<img src="${photo(kind,item,260)}" alt="" draggable="false" referrerpolicy="no-referrer"><span class="tlabel">${esc(item.name)}</span>`;
 }
-const catalog=Object.fromEntries(Object.keys(placements).map(kind=>[kind,allItems().filter(it=>it.kind===kind)]));
-function areaItems(kind,col,row){
-  const pool=catalog[kind];
-  if(!camera.batch&&col===0&&row===0)return featured[kind].map(id=>pool.find(it=>it.item.id===id)).filter(Boolean);
-  const offset=((col*7+row*11+camera.batch*13)%pool.length+pool.length)%pool.length;
-  const count=col||row?Math.ceil(placements[kind].length*.63):placements[kind].length;
-  return Array.from({length:count},(_,i)=>pool[(offset+i)%pool.length]);
-}
-function createTile(it,angle){
-  const el=document.createElement('button');
-  const isText=it.kind==='scene'||it.kind==='challenge';
-  el.type='button';
-  el.className='tile'+(it.kind==='space'?' round':'')+(isText?' txt':'');
-  el.dataset.kind=it.kind;el.dataset.key=key(it);
-  el.title=it.item.name;
-  el.setAttribute('aria-label','加入'+it.item.name);
-  el.style.setProperty('--rot',angle+'deg');
-  el.innerHTML=tileHTML(it);
-  attachDrag(el,it);
+function createNode(node){
+  if(node.it){
+    const el=document.createElement('button');
+    el.type='button';
+    el.className='tile'+(node.kind==='space'?' round':'')+(node.kind==='scene'||node.kind==='challenge'?' txt':'');
+    el.dataset.key=key(node.it);
+    el.title=node.it.item.name;
+    el.setAttribute('aria-label','查看 '+node.it.item.name);
+    el.style.setProperty('--rot',node.angle+'deg');
+    el.innerHTML=tileHTML(node.it);
+    attachDrag(el,node.it);
+    return el;
+  }
+  const el=document.createElement('div');
+  el.className=node.zone?'zone-label':'theme-label';
+  el.innerHTML=node.zone
+    ?`<strong><i>${node.zone.mark}</i> ${node.zone.name}</strong><span>${node.zone.question}</span>`
+    :`<span>${node.label}</span>`;
   return el;
 }
+function metrics(){
+  const {clientWidth:w,clientHeight:h}=canvasEl();
+  return {w,h,s:Math.min(w/1586,h/880),cx:w*.483,cy:h*.485};
+}
 function drawCanvas(){
-  const {clientWidth:width,clientHeight:height}=canvasEl(), {x,y,zoom}=camera;
-  const spanX=Math.max(width,720),spanY=Math.max(height,540);
-  const extent=width+'/'+height, resized=extent!==worldExtent;
-  worldExtent=extent;
+  const {w,h,s,cx,cy}=metrics(), {x,y,zoom}=camera;
+  const frame=w+'/'+h;
   const keep=new Set();
-  const left=-x/zoom-88, top=-y/zoom-88, right=(width-x)/zoom+88, bottom=(height-y)/zoom+88;
-  const shift=(spanX-width)/2;
-  for(let row=Math.floor(top/spanY);row<=Math.floor(bottom/spanY);row++){
-    for(let col=Math.floor((left+shift)/spanX);col<=Math.floor((right+shift)/spanX);col++){
-      for(const kind of Object.keys(placements)){
-        if(!state.filters[kind])continue;
-        const items=areaItems(kind,col,row);
-        items.forEach((it,i)=>{
-          const roam=(col||row)&&(kind==='space'||kind==='earth')&&i<2;
-          const slot=roam?roamingSlots[i+(kind==='earth'?2:0)]:placements[kind][i];
-          const [px,py,w,h,angle]=slot;
-          const stagger=col||row?(Math.abs(col*17+row*23+i*11)%55)-27:0;
-          const centerX=col*spanX+(px+stagger)*spanX/1586-shift;
-          const centerY=row*spanY+(py+stagger*.7)*spanY/992;
-          const tileWidth=w*spanX/1586, tileHeight=h*spanY/992;
-          if(centerX+tileWidth/2<left||centerX-tileWidth/2>right||centerY+tileHeight/2<top||centerY-tileHeight/2>bottom)return;
-          const id=`${row}/${col}/${kind}/${i}`;
-          keep.add(id);
-          let el=mounted.get(id);
-          if(!el){
-            el=createTile(it,angle);
-            mounted.set(id,el);
-            world.appendChild(el);
-            el.dataset.newTile='';
-          }
-          if(resized||'newTile' in el.dataset){
-            delete el.dataset.newTile;
-            el.style.left=centerX-tileWidth/2+'px';
-            el.style.top=centerY-tileHeight/2+'px';
-            el.style.setProperty('--width',tileWidth+'px');
-            el.style.setProperty('--height',tileHeight+'px');
-          }
-          el.classList.toggle('inpot',inPot(it.kind,it.item.id));
-        });
-      }
+  for(const node of map){
+    const gx=cx+node.x*s,gy=cy+node.y*s,tw=node.w*s,th=node.h*s;
+    const sx=gx*zoom+x,sy=gy*zoom+y;
+    if(sx+tw*zoom/2<-36||sy+th*zoom/2<-36||sx-tw*zoom/2>w+36||sy-th*zoom/2>h+36)continue;
+    keep.add(node.id);
+    let el=mounted.get(node.id);
+    if(!el){
+      el=createNode(node);
+      el.dataset.kind=node.kind;
+      world.appendChild(el);mounted.set(node.id,el);
+    }
+    if(el.dataset.frame!==frame){
+      el.dataset.frame=frame;
+      el.style.left=gx-tw/2+'px';el.style.top=gy-th/2+'px';
+      el.style.setProperty('--width',tw+'px');el.style.setProperty('--height',th+'px');
+      el.style.setProperty('--map-scale',s);
+    }
+    if(node.it){
+      const selected=inPot(node.kind,node.it.item.id);
+      el.classList.toggle('inpot',selected);
+      el.setAttribute('aria-pressed',String(selected));
     }
   }
   for(const [id,el] of mounted){
@@ -156,18 +140,34 @@ function drawCanvas(){
   world.style.transform=`translate3d(${x}px,${y}px,0) scale(${zoom})`;
   $('#zoomValue').textContent=Math.round(zoom*100)+'%';
 }
-function applyFilters(){drawCanvas();}
 function requestCanvas(){
-  if(paintFrame)return;
-  paintFrame=requestAnimationFrame(()=>{paintFrame=0;drawCanvas();});
+  if(!paintFrame)paintFrame=requestAnimationFrame(()=>{paintFrame=0;drawCanvas();});
 }
-function renderCanvas(initial=false){
-  if(!initial)camera.batch++;
-  world.replaceChildren();
-  mounted.clear();
-  drawCanvas();
+function renderCanvas(){drawCanvas();}
+function flyTo(x,y,zoom){
+  cancelAnimationFrame(flight);
+  const {x:oldX,y:oldY,zoom:oldZoom}=camera;
+  const start=performance.now();
+  function step(now){
+    const t=reduceMotion()?1:Math.min(1,(now-start)/360);
+    const eased=1-(1-t)**3;
+    Object.assign(camera,{x:oldX+(x-oldX)*eased,y:oldY+(y-oldY)*eased,zoom:oldZoom+(zoom-oldZoom)*eased});
+    drawCanvas();
+    if(t<1)flight=requestAnimationFrame(step);
+  }
+  flight=requestAnimationFrame(step);
+}
+function visitZone(kind,far=false){
+  const zone=DESIGN_ZONES[kind],{w,h,s,cx,cy}=metrics();
+  const zoom=w<760?2.05:1.27;
+  const x=cx+zone.side*(far?1120:520)*s;
+  const y=cy+(zone.vertical<0?-166:224)*s;
+  const targetX=w<760?w/2:w*(zone.side<0?.25:.75);
+  const targetY=h*(zone.vertical<0?.28:.72);
+  flyTo(targetX-x*zoom,targetY-y*zoom,zoom);
 }
 function zoomCanvas(factor,x=innerWidth/2,y=innerHeight/2){
+  cancelAnimationFrame(flight);
   const zoom=Math.min(2.6,Math.max(.65,camera.zoom*factor));
   const ratio=zoom/camera.zoom;
   camera.x=x-(x-camera.x)*ratio;
@@ -185,6 +185,7 @@ function wireCanvas(){
     return {x:(a.x+b.x)/2,y:(a.y+b.y)/2,d:Math.hypot(a.x-b.x,a.y-b.y)};
   }
   app.addEventListener('wheel',e=>{
+    cancelAnimationFrame(flight);
     e.preventDefault();
     const unit=e.deltaMode===1?16:e.deltaMode===2?innerHeight:1;
     if(e.ctrlKey||e.metaKey)zoomCanvas(Math.exp(-e.deltaY*unit*.003),e.clientX,e.clientY);
@@ -195,13 +196,14 @@ function wireCanvas(){
     }
   },{passive:false});
   window.addEventListener('keydown',e=>{
-    if(e.code!=='Space'||e.target.closest('button,input,textarea,[contenteditable]')||$('.modal.show,.results.show'))return;
+    if(e.code!=='Space'||e.target.closest('button,input,textarea,[contenteditable]')||$('.modal.show,.results.show,.clue-dialog[open]'))return;
     e.preventDefault();space=true;app.classList.add('pan-mode');
   });
   const releaseSpace=()=>{space=false;app.classList.remove('pan-mode');};
   window.addEventListener('keyup',e=>{if(e.code==='Space')releaseSpace();});
   window.addEventListener('blur',()=>{releaseSpace();pan=null;touches.clear();app.classList.remove('panning');});
   app.addEventListener('pointerdown',e=>{
+    cancelAnimationFrame(flight);
     if(e.pointerType==='touch')touches.set(e.pointerId,{x:e.clientX,y:e.clientY});
     if(touches.size===2){
       app.classList.remove('panning');
@@ -243,7 +245,8 @@ function wireCanvas(){
   app.addEventListener('pointercancel',end,true);
   $('#zoomIn').onclick=()=>zoomCanvas(1.2);
   $('#zoomOut').onclick=()=>zoomCanvas(1/1.2);
-  $('#zoomValue').onclick=()=>{Object.assign(camera,{x:0,y:0,zoom:1});requestCanvas();};
+  $('#zoomValue').onclick=()=>flyTo(0,0,1);
+  $$('[data-zone-jump]').forEach(button=>button.onclick=()=>visitZone(button.dataset.zoneJump));
 }
 
 /* ---------- drag to center ---------- */
@@ -258,7 +261,7 @@ function overForge(x,y){
 
 function attachDrag(el,it){
   el.addEventListener('pointerdown',e=>{
-    if(e.button!==0||state.cooking||el.classList.contains('inpot'))return;
+    if(e.button!==0||state.cooking)return;
     e.preventDefault();
     const sz=el.getBoundingClientRect().width;
     drag={it,el,started:false,sz,x:e.clientX,y:e.clientY};
@@ -280,19 +283,18 @@ function attachDrag(el,it){
     ghost.classList.remove('on');
     $('#catcher').classList.remove('over');
     if(e.type==='pointercancel'){drag=null;return;}
-    if(drag.started && overForge(e.clientX,e.clientY)){
+    if(drag.started && overForge(e.clientX,e.clientY)&&!inPot(it.kind,it.item.id)){
       addToPot(it,{x:e.clientX,y:e.clientY});
       el.classList.add('inpot');
     }else if(!drag.started){
-      // treat as tap: on mobile a tap also drops into the pot
-      addToPot(it,{x:e.clientX,y:e.clientY}); el.classList.add('inpot');
+      inspectClue(it);
     }
     drag=null;
   };
   el.addEventListener('pointerup',end);
   el.addEventListener('pointercancel',end);
   el.addEventListener('click',e=>{
-    if(e.detail===0&&!state.cooking){addToPot(it);el.classList.add('inpot');}
+    if(e.detail===0&&!state.cooking)inspectClue(it);
   });
 }
 
@@ -312,6 +314,7 @@ function moveGhost(x,y,silent){
 function addToPot(it,origin){
   if(inPot(it.kind,it.item.id))return;
   state.pot.push(it);
+  if($('.clue-dialog[open]'))$('#clueDialog').close();
   requestCanvas();
   renderCluster(true,origin);
   refreshCook();
@@ -378,7 +381,12 @@ function refreshCook(){
   if(n===0)hint.innerHTML='把食材拖进锅里 · 已选 <b>0</b> 条线索';
   else if(!hasSignal())hint.innerHTML=`已选 <b>${n}</b> 条线索 · 还差一个 ✦ 太空信号`;
   else if(!hasEarth())hint.innerHTML=`已选 <b>${n}</b> 条线索 · 还差一个 ◆ 地球同款`;
-  else hint.innerHTML=`已选 ${n} 条线索`;
+  else{
+    const scene=state.pot.some(item=>item.kind==='scene'), limit=state.pot.some(item=>item.kind==='challenge');
+    hint.textContent=scene&&limit?`已选 ${n} 条 · 可以检验设计假设`
+      :scene?`已选 ${n} 条 · 可加一个限制试试`
+      :`已选 ${n} 条 · 可加一个旅客时刻`;
+  }
 }
 
 function luckyFill(){
@@ -398,19 +406,33 @@ function luckyFill(){
   });
 }
 
-/* ---------- filters ---------- */
-function wireFilters(){
-  $$('.fxpill').forEach(p=>{
-    p.onclick=()=>{
-      const k=p.dataset.kind;
-      state.filters[k]=!state.filters[k];
-      p.classList.toggle('on',state.filters[k]);
-      p.setAttribute('aria-pressed',String(state.filters[k]));
-      applyFilters();
-    };
-  });
+function inspectClue(it){
+  if(state.cooking)return;
+  const dialog=$('#clueDialog'), body=$('#clueBody');
+  const {item,kind}=it, zone=DESIGN_ZONES[kind];
+  const group=zone.groups.find(([,ids])=>ids.includes(item.id))?.[0];
+  const fields=kind==='scene'?[['谁',item.who],['发生了什么',item.moment],['感受',item.emo]]
+    :kind==='challenge'?[['限制',item.block],['设计切口',item.twist]]
+    :[[kind==='space'?'变化线索':'可借做法',item.desc]];
+  const suggestions=[...new Set(DESIGN_LINKS.filter(link=>link.includes(item.id)).flat())]
+    .filter(id=>id!==item.id).map(id=>clues.get(id)).filter(Boolean).slice(0,5);
+  body.dataset.kind=kind;
+  body.innerHTML=`<div class="clue-kicker">${zone.mark} ${zone.name} · ${esc(group||item.tag)}</div>
+    <h2 id="clueTitle">${esc(item.name)}</h2>
+    ${kind==='space'||kind==='earth'?`<img class="clue-image" src="${photo(kind,item,500)}" alt="">`:''}
+    <p class="clue-question">${zone.question}</p>
+    <dl>${fields.map(([label,value])=>`<div><dt>${label}</dt><dd>${esc(value)}</dd></div>`).join('')}</dl>
+    ${suggestions.length?`<section class="clue-related"><h3>可以搭配的线索</h3>${suggestions.map(other=>`<button data-related-clue="${other.item.id}">${DESIGN_ZONES[other.kind].mark} ${esc(other.item.name)} <span>↗</span></button>`).join('')}</section>`:''}
+    <button class="clue-add" ${inPot(kind,item.id)?'disabled':''}>${inPot(kind,item.id)?'已在锅中':'加入锅中 ＋'}</button>`;
+  $('.clue-add',body).onclick=()=>{
+    dialog.close();
+    const box=forgeRect();
+    addToPot(it,{x:box.x+box.width*.75,y:box.y+box.height*.2});
+  };
+  $$('[data-related-clue]',body).forEach(button=>button.onclick=()=>inspectClue(clues.get(button.dataset.relatedClue)));
+  if(!dialog.open)dialog.showModal();
+  $('#closeClue').focus();
 }
-
 /* ---------- COOKING ---------- */
 async function cook(){
   if(state.cooking||!canCook())return;
@@ -612,7 +634,7 @@ function recipeText(recipe){
   return t;
 }
 async function aiGenerate(recipe,apiKey){
-  const sys=`你是太空旅馆的产品脑暴师。用户给你几样"食材"：太空真实技术/物理规则、地球已有好产品、太空旅客的真实场景与硬约束。请把它们融合，设计出"只有太空旅馆才需要、才能成立"的新产品/服务/系统。要求：具体、可成立、有画面、有商业感，不要空话。`;
+  const sys=`你是用未来设计方法研究太空旅居的设计师。先指出太空变化带来的新机会，再从地球案例提取可迁移的机制，落到具体的人和时刻，最后用限制检验。把未经证实的假设写为待验证。用户给你几样"食材"：太空真实技术/物理规则、地球已有好产品、太空旅客的真实场景与硬约束。请把它们融合，设计出"只有太空旅馆才需要、才能成立"的新产品/服务/系统。要求：具体、可成立、有画面、有商业感，不要空话。`;
   const seed=state._seed?`\n（在上一轮「${state._seed}」的基础上，换个角度再想，不要重复。）`:'';
   const usr=`食材如下：\n${recipeText(recipe)}${seed}
 请输出 4 个点子。严格返回 JSON 数组，每个元素字段：
@@ -681,6 +703,13 @@ function localGenerate(recipe){
   ];
   // shuffle lightly so remix feels different
   const ideas=stems.sort(()=>Math.random()-0.5).slice(0,4);
+  const soundLetter=S.id==='IE-31'&&E.id==='HT-31';
+  if(soundLetter&&!state._seed){
+    ideas[0]={title:'月面声音家书',
+      value:'为第一次到月面、在舱里独处的旅客，把盘式录音机的'+b('异步留声')+'移植到床边播放器。看见地球却无法马上通话时，按一下就能听到家人的日常声音。',
+      moment:CH?'带着「'+CH.name+'」做一次模拟：在同一情境下比较语音和环境声，看哪种更愿意重听。':'入住第一夜，先比较 30 秒家人语音与日常环境声，记录哪一种让人更愿意重听。',
+      tags:['月面栖居','异步留声','课堂待验证']};
+  }
   if(state._seed){
     ideas[0]={...ideas[0],title:'换个时刻 · '+E.name,
       value:`沿着「${b(state._seed)}」再走一步：把同一组合挪到${b('离舱前最后五分钟')}，让旅客决定哪段体验要留在舱内、哪段想带回地球。`,
@@ -695,12 +724,16 @@ function openModal(id){$('#'+id).classList.add('show');}
 function closeModal(id){$('#'+id).classList.remove('show');}
 
 function wire(){
-  wireFilters();
+  $('#closeClue').onclick=()=>$('#clueDialog').close();
   wireCanvas();
   wireDeck();
   $('#cookBtn').onclick=cook;
   $('#diceBtn').onclick=luckyFill;
-  $('#shuffleBtn').onclick=()=>{if(!drag)renderCanvas();};
+  $('#shuffleBtn').onclick=()=>{
+    if(drag)return;
+    const kinds=Object.keys(DESIGN_ZONES);
+    visitZone(kinds[batch++%kinds.length],true);
+  };
   $('#rclose').onclick=closeResults;
   $('#againBtn').onclick=()=>{closeResults();setTimeout(cook,300);};
   $('#clearBtn').onclick=()=>{closeResults();clearPot();};
@@ -725,7 +758,7 @@ function wire(){
 }
 
 function boot(){
-  renderCanvas(true);
+  renderCanvas();
   wire();
   const starters=['IE-31','SC-01','HT-31'];
   const items=allItems();

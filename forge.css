@@ -189,3 +189,52 @@ button:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
 .empty-deck{font-size:13px;color:#62584a}
 .stir-loader{width:35px;height:35px;border:2px solid #d0bdab;border-top-color:var(--blue);border-radius:50%;animation:orb .95s linear infinite}
 @media(max-width:600px){.results{padding:18px 10px}.deck-card.note{width:89%;padding:14px 16px}.deck-peek.before{left:0}.deck-peek.after{right:0}.deck-peek span{display:none}.recipe{font-size:11px}}
+
+/* Four neighborhoods in one continuous map. Labels move with their clues. */
+.zone-label,.theme-label{position:absolute;width:var(--width);height:var(--height);pointer-events:none}
+.zone-label{display:flex;flex-direction:column;justify-content:center;gap:4px;border-bottom:1px solid var(--zone-line)}
+.zone-label strong{font:600 clamp(11px,calc(25px * var(--map-scale)),26px)/1.2 var(--serif);letter-spacing:.04em;color:var(--zone-ink);white-space:nowrap}
+.zone-label span{color:#64594e;font-size:clamp(7px,calc(13px * var(--map-scale)),13px);white-space:nowrap}
+.zone-label i{font-style:normal;font-family:system-ui,sans-serif}
+.theme-label{font:500 clamp(7px,calc(14px * var(--map-scale)),14px)/1.3 var(--serif);color:var(--zone-ink);display:grid;place-items:center;white-space:nowrap}
+[data-kind=space]{--zone-line:#7e8bc287;--zone-ink:#233790}
+[data-kind=earth]{--zone-line:#a78c7487;--zone-ink:#604c38}
+[data-kind=scene]{--zone-line:#977bb887;--zone-ink:#654482}
+[data-kind=challenge]{--zone-line:#ba8d7887;--zone-ink:#813e29}
+.material-world .tile{cursor:grab}
+.material-world .tile-kind{width:clamp(10px,calc(19px * var(--map-scale)),20px);height:clamp(10px,calc(19px * var(--map-scale)),20px);font-size:clamp(7px,calc(11px * var(--map-scale)),12px)}
+.material-world .tile.txt{font-size:clamp(7px,calc(14px * var(--map-scale)),14px);line-height:1.2;word-break:normal}
+.material-world .tile.txt[data-kind=scene]{padding-left:clamp(12px,calc(22px * var(--map-scale)),23px);text-align:left}
+.material-world .tile.txt[data-kind=challenge]{padding:3px 4px 3px clamp(10px,calc(18px * var(--map-scale)),19px)}
+.material-world .tile.txt[data-kind=challenge] .tile-kind{top:50%;translate:0 -50%}
+.zone-nav{position:absolute;z-index:21;bottom:2%;left:50%;translate:-50% 0;display:flex;gap:3px;padding:3px;border:1px solid #d9cfc6;border-radius:8px;background:#f9f5efe8;white-space:nowrap}
+.zone-nav button{border:0;background:none;border-radius:5px;padding:4px 7px;color:#4c443e;font-size:11px}
+.zone-nav button:hover{background:#ece4dc}
+.zone-nav span{margin-right:3px}
+.zone-nav [data-zone-jump=space] span{color:#263b9a}.zone-nav [data-zone-jump=earth] span{color:#604c38}
+.zone-nav [data-zone-jump=scene] span{color:#654482}.zone-nav [data-zone-jump=challenge] span{color:#813e29}
+.clue-dialog{width:min(430px,calc(100vw - 28px));max-height:min(85svh,710px);margin:auto;border:1px solid #d5c9bb;border-radius:12px;
+  padding:23px;background:#fffbf4;color:#29251f;box-shadow:0 18px 60px #30231e26;overflow:auto}
+.clue-dialog::backdrop{background:#30251b24;backdrop-filter:blur(3px)}
+.clue-close{position:absolute;right:13px;top:11px;border:0;background:none;font-size:23px;color:#5a514a}
+.clue-kicker{font-size:11px;color:var(--zone-ink);letter-spacing:.07em}
+.clue-dialog h2{font:600 25px/1.2 var(--serif);margin:8px 22px 10px 0}
+.clue-image{width:100%;height:142px;object-fit:cover;border-radius:6px}
+.clue-question{margin:10px 0 5px;color:#695744;font-size:12px}
+.clue-dialog dl{display:grid;gap:8px;margin:10px 0 14px}
+.clue-dialog dt{font-size:11px;font-weight:700;color:var(--zone-ink)}
+.clue-dialog dd{margin:2px 0 0;font-size:13px;line-height:1.6}
+.clue-related{display:flex;gap:5px;flex-wrap:wrap;border-top:1px solid #e6dbd0;padding:9px 0 12px}
+.clue-related h3{width:100%;font-size:11px;color:#655a50;margin-bottom:3px}
+.clue-related button{background:#f3ece4;border:1px solid #ded1c5;border-radius:5px;padding:4px 6px;font-size:11px;text-align:left}
+.clue-related button:hover{border-color:var(--blue)}
+.clue-add{background:#262320;color:white;border:0;border-radius:6px;padding:8px 12px;font-size:12px}
+.clue-add:disabled{opacity:.55}
+@media(max-width:760px){.zone-nav{left:3%;translate:none;bottom:2%;gap:0}.zone-nav button{padding:4px 3px;font-size:9px}.zone-nav span{margin-right:2px}.canvas-tools{right:2%;gap:0}.canvas-tools button{min-width:22px;font-size:11px}.canvas-gesture{display:none}}
+.cookhint{font-size:clamp(10px,1vw,15px)}
+.zone-label[data-kind=scene] + .theme-label::before{content:"";display:block;width:5px;height:5px;border-radius:50%;background:#8063a2}
+@media(max-width:760px){.topbar .brand{font-size:17px}.controls{gap:7px}.tbtn{font-size:11px}.cookhint::before,.cookhint::after{width:9px}.canvas-gesture{display:none}}
+.material-world .tile.inpot{visibility:visible;pointer-events:auto;opacity:.52;cursor:pointer}
+.material-world .tile.inpot::after{content:"✓";position:absolute;right:5px;bottom:5px;background:#fff9ed;color:#283f9c;border-radius:50%;display:grid;place-items:center;width:17px;height:17px;font-size:11px}
+.material-world .tile.inpot[data-kind=scene]::after{right:3px;top:50%;bottom:auto;translate:0 -50%}
+.material-world .tile.inpot:hover,.material-world .tile.inpot:focus-visible{opacity:.92}
