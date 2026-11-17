@@ -78,14 +78,11 @@ function samplePool(){
 
 function tileHTML(it){
   const k=it.kind,o=it.item;
-  if(k==='space'||k==='earth'){
-    return `<img src="${photo(k,o,260)}" alt="" loading="lazy" referrerpolicy="no-referrer">
+  // ALL tiles are real photos (ref图 is photos-only, no solid color chips)
+  const w=k==='scene'||k==='challenge'?260:260;
+  return `<img src="${photo(k,o,w)}" alt="" loading="lazy" referrerpolicy="no-referrer">
       <span class="kind"></span>
       <div class="tlabel">${esc(o.name)}</div>`;
-  }
-  // scene / challenge = text chip tile
-  const sub=k==='scene'?'SCENE · 场景':'CHALLENGE · 挑战';
-  return `<span class="kind"></span><div class="tt">${esc(o.name)}</div><div class="ts">${sub}</div>`;
 }
 
 function renderCanvas(){
@@ -94,7 +91,7 @@ function renderCanvas(){
   const pos=scatterPositions(CURRENT);
   CURRENT.forEach((it,i)=>{
     const el=document.createElement('div');
-    el.className='tile'+((it.kind==='space'||it.kind==='earth')?'':' txt')+((it.kind==='space'||it.kind==='scene')?' round':'');
+    el.className='tile'+((it.kind==='space'||it.kind==='scene')?' round':'');
     el.dataset.kind=it.kind;el.dataset.key=key(it);
     const sz=it.kind==='space'||it.kind==='earth'?rnd(78,104):rnd(84,100);
     el.style.setProperty('--sz',sz.toFixed(0)+'px');
@@ -165,14 +162,9 @@ function attachDrag(el,it){
 
 function setGhost(it,sz){
   ghost.style.width=ghost.style.height=(sz||88)+'px';
-  if(it.kind==='space'||it.kind==='earth'){
-    ghost.classList.remove('txt');
-    ghost.innerHTML=`<img src="${photo(it.kind,it.item,220)}" alt="" referrerpolicy="no-referrer">`;
-  }else{
-    ghost.classList.add('txt');
-    ghost.style.background=it.kind==='scene'?'linear-gradient(140deg,#1bbf94,#0f7d61)':'linear-gradient(140deg,#f0774c,#cf4f27)';
-    ghost.innerHTML=esc(it.item.name);
-  }
+  ghost.classList.remove('txt');
+  ghost.style.background='none';
+  ghost.innerHTML=`<img src="${photo(it.kind,it.item,220)}" alt="" referrerpolicy="no-referrer">`;
   ghost.style.borderRadius=(it.kind==='space'||it.kind==='scene')?'50%':'14px';
 }
 function moveGhost(x,y,silent){
@@ -210,17 +202,13 @@ function renderCluster(justAdded){
   state.pot.forEach((p,i)=>{
     const el=document.createElement('div');
     const round=(p.kind==='space'||p.kind==='scene');
-    el.className='pin'+((p.kind==='scene'||p.kind==='challenge')?' txt':'')+(round?' round':'');
+    el.className='pin'+(round?' round':'');
     el.dataset.kind=p.kind;
     const ang=(i/Math.max(1,n))*Math.PI*2 - Math.PI/2;
     const r=n===1?0:R;
     const dx=Math.cos(ang)*r, dy=Math.sin(ang)*r;
     const rot=rnd(-8,8);
-    if(p.kind==='space'||p.kind==='earth'){
-      el.innerHTML=`<img src="${photo(p.kind,p.item,180)}" alt="" referrerpolicy="no-referrer"><span class="ek"></span>`;
-    }else{
-      el.innerHTML=esc(p.item.name)+`<span class="ek"></span>`;
-    }
+    el.innerHTML=`<img src="${photo(p.kind,p.item,180)}" alt="" referrerpolicy="no-referrer"><span class="ek"></span>`;
     const x=document.createElement('span');x.className='pinx';x.textContent='✕';
     x.onclick=ev=>{ev.stopPropagation();removeFromPot(p.kind,p.item.id);};
     el.appendChild(x);
@@ -482,6 +470,41 @@ function localGenerate(recipe){
   return stems.sort(()=>Math.random()-0.5).slice(0,4);
 }
 
+/* ---------- decorative blue arc arrow (ref: 从锅内弯向右上飞出) ---------- */
+function drawPanArrow(){
+  const svg=$('#wires'); if(!svg) return;
+  const stage=$('#stage'); if(!stage) return;
+  const W=window.innerWidth, H=window.innerHeight;
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  svg.setAttribute('width',W); svg.setAttribute('height',H);
+  const r=stage.getBoundingClientRect();
+  const cx=r.left+r.width/2, cy=r.top+r.height/2, pr=r.width*0.42;
+  // start: a dot inside the pan (lower-left of center); end: up-right, outside the rim
+  const x0=cx-pr*0.28, y0=cy+pr*0.10;
+  const x1=cx+pr*0.95, y1=cy-pr*1.05;          // end point (flying-out photo)
+  const cxp=cx+pr*0.15, cyp=cy-pr*1.15;        // control -> smooth upward bow
+  const blue=getComputedStyle(document.body).getPropertyValue('--blue').trim()||'#2E4BFF';
+  svg.innerHTML=`
+    <defs>
+      <marker id="arrowHead" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 L3,5 Z" fill="${blue}"/>
+      </marker>
+    </defs>
+    <circle cx="${x0}" cy="${y0}" r="5" fill="${blue}"/>
+    <path id="arcPath" d="M ${x0} ${y0} Q ${cxp} ${cyp} ${x1} ${y1}"
+      fill="none" stroke="${blue}" stroke-width="2.4" stroke-linecap="round"
+      marker-end="url(#arrowHead)" stroke-dasharray="var(--arcdash)"
+      style="filter:drop-shadow(0 1px 2px rgba(46,75,255,.25))"/>`;
+  // animate the draw once
+  const path=svg.querySelector('#arcPath');
+  if(path && path.getTotalLength){
+    const L=path.getTotalLength();
+    path.style.strokeDasharray=L; path.style.strokeDashoffset=L;
+    path.animate([{strokeDashoffset:L},{strokeDashoffset:0}],{duration:1100,easing:'cubic-bezier(.4,.9,.3,1)',fill:'forwards',delay:350});
+  }
+}
+let _arcRT; window.addEventListener('resize',()=>{clearTimeout(_arcRT);_arcRT=setTimeout(drawPanArrow,220);});
+
 /* ---------- modals & wiring ---------- */
 function openModal(id){$('#'+id).classList.add('show');}
 function closeModal(id){$('#'+id).classList.remove('show');}
@@ -532,8 +555,24 @@ function boot(){
   renderCluster();
   refreshCook();
   wire();
-  // first-visit auto how
-  if(!localStorage.getItem('sc_seen')){openModal('howModal');localStorage.setItem('sc_seen','1');}
+  prefillPan();
+  drawPanArrow();
+  // NO auto-popup — the clean canvas should greet the user. How-to lives behind the 玩法 button.
+}
+
+/* seed a couple cards into the pan so the centerpiece reads like the reference
+   (photos sitting in the pan + the arc), not an empty dish */
+function prefillPan(){
+  try{
+    const s=CURRENT.find(x=>x.kind==='space');
+    const e=CURRENT.find(x=>x.kind==='earth');
+    [s,e].forEach(it=>{
+      if(!it) return;
+      addToPot(it);
+      const t=$(`.tile[data-key="${key(it)}"]`,canvasEl());
+      if(t)t.classList.add('inpot');
+    });
+  }catch(_){}
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 

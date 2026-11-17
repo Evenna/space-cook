@@ -78,18 +78,14 @@ body[data-theme="press"] .note:nth-child(4n+3) .value{color:#e8e5de}
 body[data-theme="press"] .cookbtn{border:2.5px solid #1a1a1a;box-shadow:5px 5px 0 #1a1a1a}
 
 /* theme switcher */
-.themebar{position:fixed;top:50px;right:26px;z-index:32;display:flex;align-items:center;gap:6px;
-  background:var(--glass);backdrop-filter:blur(8px);border:1.5px solid var(--glassborder);border-radius:999px;padding:5px 9px}
-.themebar .tlabel{font-family:"Space Grotesk";font-size:9px;letter-spacing:2px;color:var(--mute);font-weight:600;margin-right:2px}
-.tdot{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--ink2);cursor:pointer;
-  border:none;background:transparent;padding:4px 9px;border-radius:999px;transition:.2s;font-family:inherit}
-.tdot i{width:11px;height:11px;border-radius:50%;display:inline-block}
+.themebar{display:inline-flex;align-items:center;gap:7px;margin-left:2px}
+.tdot{display:inline-flex;cursor:pointer;border:none;background:transparent;padding:0;transition:.2s;font-family:inherit}
+.tdot i{width:12px;height:12px;border-radius:50%;display:inline-block;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
 .tdot[data-theme="gallery"] i{background:linear-gradient(135deg,#eeece6,#2E4BFF)}
 .tdot[data-theme="cosmos"] i{background:linear-gradient(135deg,#070a16,#5b7cff)}
 .tdot[data-theme="press"] i{background:linear-gradient(135deg,#f4f1ea,#ff3b1f)}
-.tdot:hover{background:var(--blue-soft);color:var(--blue)}
-.tdot.on{background:var(--blue);color:#fff}
-.tdot.on i{box-shadow:0 0 0 2px rgba(255,255,255,.6)}
+.tdot:hover{transform:scale(1.2)}
+.tdot.on i{box-shadow:0 0 0 2px var(--blue)}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
 body{
@@ -101,41 +97,40 @@ body{
   background:radial-gradient(1400px 900px at 50% 42%, #f6f4ee, transparent 70%);}
 
 /* corner labels (SATTO style) */
-.corner{position:fixed;z-index:30;font-family:"Space Grotesk";font-size:10.5px;letter-spacing:1.5px;
-  color:var(--mute);line-height:1.7;text-transform:uppercase;pointer-events:none;font-weight:500}
-.corner b{color:var(--ink2);font-weight:600}
-.c-tl{top:22px;left:26px}
-.c-tr{top:22px;right:26px;text-align:right}
-.c-bl{bottom:22px;left:26px}
-.c-br{bottom:22px;right:26px;text-align:right}
-.brand{position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:31;
-  font-weight:900;font-size:17px;letter-spacing:4px;display:flex;align-items:center;gap:9px;color:var(--ink)}
-.brand .dot{width:9px;height:9px;border-radius:50%;background:var(--blue);box-shadow:0 0 0 4px var(--blue-soft)}
+.corner{position:fixed;z-index:30;font-family:"Space Grotesk";font-size:11px;letter-spacing:1.2px;
+  color:var(--ink2);line-height:1.6;pointer-events:none;font-weight:600}
+.corner .ci{color:var(--blue);margin-right:5px}
+.corner .cs{color:var(--mute);font-size:9.5px;letter-spacing:2px;text-transform:uppercase}
+.c-tl{top:64px;left:28px}
+.c-tr{top:64px;right:28px;text-align:right}
+/* top bar: brand left + nav, with a hairline divider */
+.topbar{position:fixed;top:0;left:0;right:0;z-index:31;display:flex;align-items:center;justify-content:space-between;
+  padding:16px 28px 13px;border-bottom:1px solid var(--line);background:linear-gradient(var(--bg),color-mix(in srgb,var(--bg) 70%,transparent));}
+.brand{font-weight:900;font-size:18px;letter-spacing:3px;display:flex;align-items:center;gap:10px;color:var(--ink)}
+.brand .dot{width:5px;height:20px;border-radius:2px;background:var(--blue);box-shadow:none}
 
-/* top controls */
-.controls{position:fixed;top:50px;left:50%;transform:translateX(-50%);z-index:31;display:flex;gap:8px}
-.tbtn{font-size:11.5px;font-weight:700;color:var(--ink2);cursor:pointer;padding:6px 13px;border-radius:999px;
-  border:1.5px solid var(--line);background:rgba(255,255,255,.7);backdrop-filter:blur(6px);transition:.2s;user-select:none;pointer-events:auto}
-.tbtn:hover{border-color:var(--blue);color:var(--blue)}
+/* top controls — now inline in .topbar */
+.controls{display:flex;align-items:center;gap:10px}
+.controls .sep{color:var(--mute);font-size:11px;opacity:.6}
+.tbtn{font-size:12px;font-weight:700;color:var(--ink2);cursor:pointer;transition:.2s;user-select:none;pointer-events:auto}
+.tbtn:hover{color:var(--blue)}
 
 /* side filters (floating pills) */
 .sidefx{position:fixed;z-index:31;display:flex;flex-direction:column;gap:7px;pointer-events:auto}
 .sidefx.left{left:26px;top:50%;transform:translateY(-50%)}
 .sidefx.right{right:26px;top:50%;transform:translateY(-50%);align-items:flex-end}
-.fxpill{font-size:11px;font-weight:700;padding:6px 12px;border-radius:999px;border:1.5px solid var(--line);
-  background:rgba(255,255,255,.72);backdrop-filter:blur(6px);cursor:pointer;transition:.2s;color:var(--ink2);user-select:none;white-space:nowrap}
-.fxpill:hover{transform:scale(1.05)}
-.fxpill.on{color:#fff}
-.fxpill[data-kind="space"].on{background:var(--blue);border-color:var(--blue)}
-.fxpill[data-kind="earth"].on{background:var(--ink);border-color:var(--ink)}
-.fxpill[data-kind="scene"].on{background:var(--scene);border-color:var(--scene)}
-.fxpill[data-kind="challenge"].on{background:var(--chal);border-color:var(--chal)}
+.fxpill{font-size:11px;font-weight:700;padding:6px 13px;border-radius:999px;border:1px solid var(--line);
+  background:transparent;cursor:pointer;transition:.2s;color:var(--mute);user-select:none;white-space:nowrap}
+.fxpill:hover{border-color:var(--blue);color:var(--blue)}
+.fxpill.on{color:var(--ink);border-color:var(--ink2)}
+.fxpill[data-kind="space"].on,.fxpill[data-kind="earth"].on,.fxpill[data-kind="scene"].on,.fxpill[data-kind="challenge"].on{background:transparent}
 .fxlabel{font-family:"Space Grotesk";font-size:9px;letter-spacing:2px;color:var(--mute);text-transform:uppercase;margin-bottom:2px;font-weight:600}
 
 /* ---------- canvas ---------- */
 #canvas{position:absolute;inset:0;z-index:5}
 #wires{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:6}
-#wires path{fill:none;stroke-width:1.6;stroke-linecap:round;opacity:.5}
+#wires path{fill:none;stroke-linecap:round}
+#wires #arcPath{opacity:.92;stroke-width:2.4}
 #wires circle{fill:var(--blue)}
 
 /* floating ingredient tiles */
@@ -189,20 +184,19 @@ body{
   border-radius:999px;background:rgba(0,0,0,.18);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.14)}
 .catcher.pan{position:absolute;inset:0;border-radius:50%;display:flex;align-items:center;justify-content:center;
   transition:.35s cubic-bezier(.34,1.56,.64,1);
-  /* clean cream ceramic interior + subtle dish curvature */
+  /* clean cream ceramic dish: single raised rim + inner bowl shadow */
   background:
-    radial-gradient(130px 90px at 38% 30%, rgba(255,255,255,.7), transparent 62%),
-    radial-gradient(circle at 50% 46%, #fdfbf6 0 52%, #f3eee3 74%, #e9e2d4 90%);
+    radial-gradient(150px 100px at 38% 28%, rgba(255,255,255,.72), transparent 60%),
+    radial-gradient(circle at 50% 50%, #fcf9f3 0 58%, #efe8da 80%, #e4dccb 100%);
   box-shadow:
-    0 34px 70px rgba(40,40,30,.26),
-    0 0 0 2px #d9d2c4,
-    0 0 0 9px #f6f2ea,
-    0 0 0 11px #cdc6b7,
-    inset 0 5px 16px rgba(255,255,255,.75),
-    inset 0 -22px 46px rgba(120,110,90,.16);}
+    0 38px 70px rgba(60,52,38,.30),
+    0 0 0 6px #efe8da,
+    0 0 0 8px #d8cfbb,
+    inset 0 7px 20px rgba(255,255,255,.85),
+    inset 0 -30px 56px rgba(120,106,78,.22);}
 .pan-sheen{position:absolute;inset:9%;border-radius:50%;pointer-events:none;z-index:9;
-  background:radial-gradient(150px 90px at 34% 26%, rgba(255,255,255,.5), transparent 68%);}
-.catcher.pan.over{transform:scale(1.04);box-shadow:0 40px 80px rgba(40,40,30,.3),0 0 0 2px var(--blue),0 0 0 9px var(--blue-soft),0 0 0 12px var(--blue),inset 0 -22px 46px rgba(120,110,90,.16)}
+  background:radial-gradient(160px 94px at 34% 24%, rgba(255,255,255,.55), transparent 66%);}
+.catcher.pan.over{transform:scale(1.04);box-shadow:0 42px 80px rgba(60,52,38,.34),0 0 0 6px var(--blue-soft),0 0 0 8px var(--blue),inset 0 -30px 56px rgba(120,106,78,.22)}
 .stage.hot .catcher.pan{box-shadow:0 40px 80px rgba(40,40,30,.28),0 0 0 2px #d9d2c4,0 0 0 9px #f6f2ea,0 0 0 11px #cdc6b7,0 0 54px 6px rgba(46,75,255,.26),inset 0 -22px 46px rgba(120,110,90,.16);animation:breathe .9s ease-in-out infinite}
 body[data-theme="cosmos"] .catcher.pan{background:
     radial-gradient(circle at 50% 42%, #1b2648, #121a38 62%, #0d1430 74%),
@@ -335,24 +329,25 @@ body[data-theme="press"] .pan-handle{background:#ff3b1f;border:2.5px solid #1a1a
 </head>
 <body>
 <div id="app">
-  <div class="brand"><span class="dot"></span>灵感碰撞</div>
-  <div class="controls">
-    <span class="tbtn" id="howBtn">? 玩法</span>
-    <span class="tbtn" id="keyBtn">AI 设置</span>
-    <span class="tbtn" id="shuffleBtn">↻ 换一批食材</span>
+  <div class="topbar">
+    <div class="brand"><span class="dot"></span>灵感碰撞</div>
+    <div class="controls">
+      <span class="tbtn" id="howBtn">玩法</span>
+      <span class="sep">·</span>
+      <span class="tbtn" id="keyBtn">AI 设置</span>
+      <span class="sep">·</span>
+      <span class="tbtn" id="shuffleBtn">换一批</span>
+      <span class="sep">·</span>
+      <span class="themebar" id="themebar">
+        <button class="tdot" data-theme="gallery" title="极简画廊"><i></i></button>
+        <button class="tdot" data-theme="cosmos" title="深空科幻"><i></i></button>
+        <button class="tdot" data-theme="press" title="编辑杂志"><i></i></button>
+      </span>
+    </div>
   </div>
 
-  <div class="themebar" id="themebar">
-    <span class="tlabel">THEME</span>
-    <button class="tdot" data-theme="gallery" title="极简画廊"><i></i>画廊</button>
-    <button class="tdot" data-theme="cosmos" title="深空科幻"><i></i>深空</button>
-    <button class="tdot" data-theme="press" title="编辑杂志"><i></i>杂志</button>
-  </div>
-
-  <div class="corner c-tl">太空 × 地球<br><b>脑暴厨房 · THE FORGE</b></div>
-  <div class="corner c-tr">BUILT FOR<br>VISUAL THINKERS<br><b>SPACE HOTEL LAB</b></div>
-  <div class="corner c-bl"><b>玩法</b><br>把想要的食材<br>拖进中心熔炉</div>
-  <div class="corner c-br">DRAG · STACK · COOK<br><b>信号 + 同款 + 场景 + 挑战</b></div>
+  <div class="corner c-tl"><span class="ci">✦</span>太空信号<br><span class="cs">场景</span></div>
+  <div class="corner c-tr"><span class="ci">◆</span>地球同款<br><span class="cs">挑战</span></div>
 
   <!-- side filters -->
   <div class="sidefx left">
